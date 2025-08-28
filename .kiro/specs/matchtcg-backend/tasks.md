@@ -56,21 +56,21 @@
     - _Requirements: 2.3, 8.1, 8.2, 3.2, 3.3_
 
 - [ ] 5. Authentication and Security Implementation
-  - [ ] 5.1 Implement JWT authentication system
+  - [x] 5.1 Implement JWT authentication system
     - Create JWT service with RS256 signing and token validation
     - Implement refresh token rotation and blacklisting
     - Create password hashing service using argon2id
     - Write unit tests for token generation and validation
     - _Requirements: 1.1, 1.2, 12.1, 12.2_
   
-  - [ ] 5.2 Implement OAuth integration
+  - [x] 5.2 Implement OAuth integration
     - Create OAuth service supporting Google and Apple providers
     - Implement PKCE flow for mobile applications
     - Add account linking logic for existing users
     - Write integration tests for OAuth flows
     - _Requirements: 1.3, 12.1_
   
-  - [ ] 5.3 Create authentication middleware
+  - [-] 5.3 Create authentication middleware
     - Implement JWT validation middleware for protected routes
     - Add rate limiting middleware with token bucket algorithm
     - Create CORS middleware with configurable origins
