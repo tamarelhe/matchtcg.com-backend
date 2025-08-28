@@ -9,14 +9,14 @@
   - Set up environment configuration management with validation
   - _Requirements: All requirements depend on proper foundation_
 
-- [ ] 2. Database Schema and Migrations
-  - [ ] 2.1 Create database migration system
+- [x] 2. Database Schema and Migrations
+  - [x] 2.1 Create database migration system
     - Implement migration framework using golang-migrate
     - Create initial migration files for all core tables
     - Add PostGIS extension and spatial indexes
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
   
-  - [ ] 2.2 Implement core database models
+  - [x] 2.2 Implement core database models
     - Create User, Profile, Group, GroupMember tables
     - Create Venue table with PostGIS POINT coordinates
     - Create Event table with geospatial location field
