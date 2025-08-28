@@ -779,7 +779,7 @@ func (r *eventRepository) buildNearbySearchQuery(lat, lon float64, radiusKm int,
 	}
 
 	// Order by distance and start time
-	baseQuery += fmt.Sprintf(" ORDER BY ST_Distance(e.location, ST_Point($1, $2)::geography), e.start_at ASC")
+	baseQuery += " ORDER BY ST_Distance(e.location, ST_Point($1, $2)::geography), e.start_at ASC"
 
 	// Add pagination
 	baseQuery += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argIndex, argIndex+1)
