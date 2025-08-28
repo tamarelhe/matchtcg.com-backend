@@ -93,21 +93,21 @@
     - _Requirements: 1.5, 1.6, 10.2, 10.3, 10.4_
 
 - [ ] 7. Event Management Use Cases
-  - [ ] 7.1 Implement core event operations
+  - [x] 7.1 Implement core event operations
     - Create CreateEvent use case with validation and geocoding
     - Create UpdateEvent use case with attendee notifications
     - Create DeleteEvent use case with proper cleanup
     - Create GetEvent use case with privacy and permission checks
     - _Requirements: 2.1, 2.6, 4.4_
   
-  - [ ] 7.2 Implement event search and discovery
+  - [x] 7.2 Implement event search and discovery
     - Create SearchEvents use case with filtering and pagination
     - Create SearchNearbyEvents use case using PostGIS spatial queries
     - Implement search result ranking and sorting algorithms
     - Write performance tests for geospatial search queries
     - _Requirements: 2.3, 2.4, 8.1, 8.2, 8.3_
   
-  - [ ] 7.3 Implement RSVP management system
+  - [x] 7.3 Implement RSVP management system
     - Create RSVPToEvent use case with capacity checking
     - Create ManageWaitlist service for automatic promotion
     - Create GetEventAttendees use case with privacy filtering

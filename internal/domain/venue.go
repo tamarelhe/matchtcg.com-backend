@@ -24,6 +24,16 @@ type Coordinates struct {
 	Longitude float64 `json:"longitude"`
 }
 
+// Address represents a structured address
+type Address struct {
+	Street     string `json:"street,omitempty"`
+	City       string `json:"city"`
+	State      string `json:"state,omitempty"`
+	PostalCode string `json:"postal_code,omitempty"`
+	Country    string `json:"country"`
+	Formatted  string `json:"formatted"`
+}
+
 // Venue represents a venue where events can be held
 type Venue struct {
 	ID        uuid.UUID              `json:"id" db:"id"`

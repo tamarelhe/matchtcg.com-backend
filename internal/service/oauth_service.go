@@ -190,13 +190,11 @@ func (o *OAuthService) HandleCallback(ctx context.Context, provider OAuthProvide
 func (o *OAuthService) LinkOrCreateUser(ctx context.Context, userInfo *OAuthUserInfo) (userID string, isNewUser bool, err error) {
 	// Try to find existing user by email
 	existingUserID, exists, err := o.userLinker.FindUserByEmail(ctx, userInfo.Email)
-	fmt.Println("XXXXXXXXXXXX - existingUserID: " + existingUserID)
 	if err != nil {
 		return "", false, fmt.Errorf("failed to find user by email: %w", err)
 	}
 
 	if exists {
-		fmt.Println("XXXXXXXXXXXX - exists")
 		// Link OAuth account to existing user
 		err = o.userLinker.LinkOAuthAccount(ctx, existingUserID, userInfo.Provider, userInfo.ID)
 		if err != nil {
@@ -204,8 +202,6 @@ func (o *OAuthService) LinkOrCreateUser(ctx context.Context, userInfo *OAuthUser
 		}
 		return existingUserID, false, nil
 	}
-
-	fmt.Println("XXXXXXXXXXXX - not exists")
 
 	// Create new user from OAuth info
 	newUserID, err := o.userLinker.CreateUserFromOAuth(ctx, userInfo)
