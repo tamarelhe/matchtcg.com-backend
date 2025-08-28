@@ -1,6 +1,9 @@
 package domain
 
 import (
+	"errors"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -35,4 +38,57 @@ type Profile struct {
 type UserWithProfile struct {
 	User
 	Profile *Profile `json:"profile,omitempty"`
+}
+
+var (
+	ErrInvalidEmail       = errors.New("invalid email format")
+	ErrEmptyEmail         = errors.New("email cannot be empty")
+	ErrEmptyPasswordHash  = errors.New("password hash cannot be empty")
+	ErrInvalidDisplayName = errors.New("display name must be between 1 and 100 characters")
+	ErrInvalidLocale      = errors.New("locale must be 'en' or 'pt'")
+	ErrInvalidTimezone    = errors.New("timezone cannot be empty")
+)
+
+var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+
+// Validate validates the User entity
+func (u *User) Validate() error {
+	if u.Email == "" {
+		return ErrEmptyEmail
+	}
+
+	if !emailRegex.MatchString(u.Email) {
+		return ErrInvalidEmail
+	}
+
+	if u.PasswordHash == "" {
+		return ErrEmptyPasswordHash
+	}
+
+	return nil
+}
+
+// Validate validates the Profile entity
+func (p *Profile) Validate() error {
+	if p.DisplayName != nil {
+		displayName := strings.TrimSpace(*p.DisplayName)
+		if len(displayName) == 0 || len(displayName) > 100 {
+			return ErrInvalidDisplayName
+		}
+	}
+
+	if p.Locale != "en" && p.Locale != "pt" {
+		return ErrInvalidLocale
+	}
+
+	if p.Timezone == "" {
+		return ErrInvalidTimezone
+	}
+
+	return nil
+}
+
+// IsValidEmail checks if an email address is valid
+func IsValidEmail(email string) bool {
+	return emailRegex.MatchString(email)
 }

@@ -24,15 +24,15 @@
     - Add all necessary indexes including spatial indexes
     - _Requirements: 1.1, 2.1, 4.1, 5.1, 7.1_
 
-- [ ] 3. Domain Layer Implementation
-  - [ ] 3.1 Create core domain entities
+- [x] 3. Domain Layer Implementation
+  - [x] 3.1 Create core domain entities
     - Implement User entity with validation methods
     - Implement Event entity with business rules for capacity and RSVP
     - Implement Group entity with role-based permissions
     - Implement Venue entity with coordinate validation
     - _Requirements: 1.1, 2.1, 4.1, 3.1_
   
-  - [ ] 3.2 Implement domain services
+  - [x] 3.2 Implement domain services
     - Create EventCapacityService for RSVP and waitlist management
     - Create GeospatialService for coordinate and distance calculations
     - Create PermissionService for group and event access control

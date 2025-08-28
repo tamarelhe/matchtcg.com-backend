@@ -1,6 +1,8 @@
 package domain
 
 import (
+	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -91,4 +93,144 @@ type EventSearchParams struct {
 	GroupID    *uuid.UUID       `json:"group_id,omitempty"`
 	Limit      int              `json:"limit"`
 	Offset     int              `json:"offset"`
+}
+
+var (
+	ErrEmptyTitle         = errors.New("event title cannot be empty")
+	ErrTitleTooLong       = errors.New("event title cannot exceed 200 characters")
+	ErrDescriptionTooLong = errors.New("event description cannot exceed 2000 characters")
+	ErrInvalidGameType    = errors.New("invalid game type")
+	ErrInvalidVisibility  = errors.New("invalid event visibility")
+	ErrInvalidCapacity    = errors.New("event capacity must be greater than 0")
+	ErrInvalidTimeRange   = errors.New("event end time must be after start time")
+	ErrInvalidEntryFee    = errors.New("entry fee cannot be negative")
+	ErrEmptyTimezone      = errors.New("timezone cannot be empty")
+	ErrEmptyLanguage      = errors.New("language cannot be empty")
+	ErrInvalidRSVPStatus  = errors.New("invalid RSVP status")
+)
+
+// Validate validates the Event entity
+func (e *Event) Validate() error {
+	if strings.TrimSpace(e.Title) == "" {
+		return ErrEmptyTitle
+	}
+
+	if len(e.Title) > 200 {
+		return ErrTitleTooLong
+	}
+
+	if e.Description != nil && len(*e.Description) > 2000 {
+		return ErrDescriptionTooLong
+	}
+
+	if !e.IsValidGameType() {
+		return ErrInvalidGameType
+	}
+
+	if !e.IsValidVisibility() {
+		return ErrInvalidVisibility
+	}
+
+	if e.Capacity != nil && *e.Capacity <= 0 {
+		return ErrInvalidCapacity
+	}
+
+	if !e.EndAt.After(e.StartAt) {
+		return ErrInvalidTimeRange
+	}
+
+	if e.EntryFee != nil && *e.EntryFee < 0 {
+		return ErrInvalidEntryFee
+	}
+
+	if e.Timezone == "" {
+		return ErrEmptyTimezone
+	}
+
+	if e.Language == "" {
+		return ErrEmptyLanguage
+	}
+
+	return nil
+}
+
+// IsValidGameType checks if the game type is valid
+func (e *Event) IsValidGameType() bool {
+	switch e.Game {
+	case GameTypeMTG, GameTypeLorcana, GameTypePokemon, GameTypeOther:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsValidVisibility checks if the visibility is valid
+func (e *Event) IsValidVisibility() bool {
+	switch e.Visibility {
+	case EventVisibilityPublic, EventVisibilityPrivate, EventVisibilityGroupOnly:
+		return true
+	default:
+		return false
+	}
+}
+
+// HasCapacity checks if the event has a capacity limit
+func (e *Event) HasCapacity() bool {
+	return e.Capacity != nil && *e.Capacity > 0
+}
+
+// IsAtCapacity checks if the event is at capacity given the current attendee count
+func (e *Event) IsAtCapacity(attendeeCount int) bool {
+	return e.HasCapacity() && attendeeCount >= *e.Capacity
+}
+
+// CanAcceptRSVP checks if the event can accept new RSVPs based on capacity
+func (e *Event) CanAcceptRSVP(currentGoingCount int) bool {
+	if !e.HasCapacity() {
+		return true // No capacity limit
+	}
+	return currentGoingCount < *e.Capacity
+}
+
+// IsPublic checks if the event is publicly visible
+func (e *Event) IsPublic() bool {
+	return e.Visibility == EventVisibilityPublic
+}
+
+// IsGroupOnly checks if the event is only visible to group members
+func (e *Event) IsGroupOnly() bool {
+	return e.Visibility == EventVisibilityGroupOnly
+}
+
+// IsPrivate checks if the event is private
+func (e *Event) IsPrivate() bool {
+	return e.Visibility == EventVisibilityPrivate
+}
+
+// Validate validates the EventRSVP entity
+func (r *EventRSVP) Validate() error {
+	if !r.IsValidStatus() {
+		return ErrInvalidRSVPStatus
+	}
+	return nil
+}
+
+// IsValidStatus checks if the RSVP status is valid
+func (r *EventRSVP) IsValidStatus() bool {
+	switch r.Status {
+	case RSVPStatusGoing, RSVPStatusInterested, RSVPStatusDeclined, RSVPStatusWaitlisted:
+		return true
+	default:
+		return false
+	}
+}
+
+// IsGoing checks if the RSVP status is "going"
+func (r *EventRSVP) IsGoing() bool {
+	return r.Status == RSVPStatusGoing
+}
+
+// IsWaitlisted checks if the RSVP status is "waitlisted"
+func (r *EventRSVP) IsWaitlisted() bool {
+	return r.Status == RSVPStatusWaitlisted
 }
