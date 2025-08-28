@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -206,8 +207,16 @@ func (cs *CalendarService) buildEventDescription(event *domain.EventWithDetails)
 	if len(event.Rules) > 0 {
 		rulesText := "Rules: "
 		var rulesParts []string
-		for key, value := range event.Rules {
-			rulesParts = append(rulesParts, fmt.Sprintf("%s: %v", key, value))
+
+		// Sort keys to ensure consistent ordering
+		var keys []string
+		for key := range event.Rules {
+			keys = append(keys, key)
+		}
+		sort.Strings(keys)
+
+		for _, key := range keys {
+			rulesParts = append(rulesParts, fmt.Sprintf("%s: %v", key, event.Rules[key]))
 		}
 		rulesText += strings.Join(rulesParts, ", ")
 		parts = append(parts, rulesText)
