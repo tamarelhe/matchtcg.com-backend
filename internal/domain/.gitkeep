@@ -1,0 +1,5 @@
+# Domain layer - Business entities and domain logic
+# This directory will contain:
+# - User, Event, Group, Venue entities
+# - Domain services and business rules
+# - Value objects and domain events

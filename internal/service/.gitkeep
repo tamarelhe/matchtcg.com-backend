@@ -1,0 +1,6 @@
+# Service layer - External service integrations
+# This directory will contain:
+# - Email service
+# - Geocoding service
+# - Calendar service
+# - OAuth service implementations

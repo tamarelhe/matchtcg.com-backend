@@ -1,0 +1,6 @@
+# Handler layer - HTTP handlers and middleware
+# This directory will contain:
+# - REST API handlers
+# - Authentication middleware
+# - Rate limiting middleware
+# - Request/response models

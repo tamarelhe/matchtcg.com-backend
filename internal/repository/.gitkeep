@@ -1,0 +1,5 @@
+# Repository layer - Data access interfaces and implementations
+# This directory will contain:
+# - Repository interfaces
+# - PostgreSQL implementations
+# - Database connection management

@@ -1,0 +1,6 @@
+# Use case layer - Application use cases
+# This directory will contain:
+# - User management use cases
+# - Event management use cases
+# - Group management use cases
+# - Authentication use cases
