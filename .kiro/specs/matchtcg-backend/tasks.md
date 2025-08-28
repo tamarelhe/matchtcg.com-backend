@@ -114,22 +114,22 @@
     - Write unit tests for capacity and waitlist logic
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 8. Group Management Implementation
-  - [ ] 8.1 Implement group operations
+- [x] 8. Group Management Implementation
+  - [x] 8.1 Implement group operations
     - Create CreateGroup use case with owner assignment
     - Create UpdateGroup use case with permission validation
     - Create DeleteGroup use case with member cleanup
     - Write unit tests for group management logic
     - _Requirements: 4.1, 4.5_
   
-  - [ ] 8.2 Implement group membership management
+  - [x] 8.2 Implement group membership management
     - Create InviteGroupMember use case with role assignment
     - Create RemoveGroupMember use case with permission checks
     - Create UpdateMemberRole use case with owner validation
     - Create GetGroupMembers use case with privacy controls
     - _Requirements: 4.2, 4.3, 4.4_
   
-  - [ ] 8.3 Implement group-based event privacy
+  - [x] 8.3 Implement group-based event privacy
     - Modify event search to respect group visibility rules
     - Create GetGroupEvents use case for private event discovery
     - Update event creation to support group-only visibility
