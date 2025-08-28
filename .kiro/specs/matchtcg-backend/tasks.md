@@ -136,15 +136,15 @@
     - Write integration tests for privacy controls
     - _Requirements: 2.4, 4.3_
 
-- [ ] 9. Location and Geocoding Services
-  - [ ] 9.1 Implement geocoding service
+- [x] 9. Location and Geocoding Services
+  - [x] 9.1 Implement geocoding service
     - Create GeocodingService interface with provider abstraction
     - Implement Nominatim provider with rate limiting and caching
     - Create coordinate validation and normalization functions
     - Write unit tests with mocked external API calls
     - _Requirements: 3.2, 3.5_
   
-  - [ ] 9.2 Implement venue management
+  - [x] 9.2 Implement venue management
     - Create CreateVenue use case with address geocoding
     - Create SearchVenues use case with location-based filtering
     - Create GetVenue use case with coordinate information
