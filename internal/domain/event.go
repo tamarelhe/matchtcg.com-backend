@@ -74,11 +74,11 @@ type EventRSVP struct {
 // EventWithDetails represents an event with additional details
 type EventWithDetails struct {
 	Event
-	Host     *User       `json:"host,omitempty"`
-	Venue    *Venue      `json:"venue,omitempty"`
-	Group    *Group      `json:"group,omitempty"`
-	RSVPs    []EventRSVP `json:"rsvps,omitempty"`
-	UserRSVP *EventRSVP  `json:"user_rsvp,omitempty"`
+	Host     *UserWithProfile `json:"host,omitempty"`
+	Venue    *Venue           `json:"venue,omitempty"`
+	Group    *Group           `json:"group,omitempty"`
+	RSVPs    []EventRSVP      `json:"rsvps,omitempty"`
+	UserRSVP *EventRSVP       `json:"user_rsvp,omitempty"`
 }
 
 // EventSearchParams represents parameters for searching events

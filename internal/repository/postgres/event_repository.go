@@ -87,26 +87,34 @@ func (r *eventRepository) GetByIDWithDetails(ctx context.Context, id uuid.UUID) 
 			e.rules, e.visibility, e.capacity, e.start_at, e.end_at, e.timezone, e.tags, e.entry_fee, e.language,
 			e.is_recurring, e.recurrence_rule, e.created_at, e.updated_at,
 			u.id, u.email, u.password_hash, u.created_at, u.updated_at, u.is_active, u.last_login,
+			p.user_id, p.display_name, p.locale, p.timezone, p.country, p.city, p.preferred_games, p.communication_preferences, p.visibility_settings, p.updated_at,
 			v.id, v.name, v.type, v.address, v.city, v.country, v.latitude, v.longitude, v.metadata, v.created_by, v.created_at,
 			g.id, g.name, g.description, g.owner_user_id, g.created_at, g.updated_at, g.is_active
 		FROM events e
 		LEFT JOIN users u ON e.host_user_id = u.id
+		LEFT JOIN profiles p ON u.id = p.user_id
 		LEFT JOIN venues v ON e.venue_id = v.id
 		LEFT JOIN groups g ON e.group_id = g.id
 		WHERE e.id = $1`
 
 	var event domain.Event
 	var host domain.User
+	var profile domain.Profile
 	var venue domain.Venue
 	var group domain.Group
 	var rulesJSON []byte
 	var venueMetadataJSON []byte
+	var profileCommPrefsJSON, profileVisibilityJSON []byte
 
 	var hostID, venueID, groupID sql.NullString
 	var hostEmail, hostPasswordHash sql.NullString
 	var hostCreatedAt, hostUpdatedAt sql.NullTime
 	var hostIsActive sql.NullBool
 	var hostLastLogin sql.NullTime
+	var profileUserID sql.NullString
+	var profileDisplayName, profileLocale, profileTimezone, profileCountry, profileCity sql.NullString
+	var profilePreferredGames []string
+	var profileUpdatedAt sql.NullTime
 	var venueName, venueType, venueAddress, venueCity, venueCountry sql.NullString
 	var venueLatitude, venueLongitude sql.NullFloat64
 	var venueCreatedBy sql.NullString
@@ -122,6 +130,8 @@ func (r *eventRepository) GetByIDWithDetails(ctx context.Context, id uuid.UUID) 
 		&event.EndAt, &event.Timezone, &event.Tags, &event.EntryFee, &event.Language,
 		&event.IsRecurring, &event.RecurrenceRule, &event.CreatedAt, &event.UpdatedAt,
 		&hostID, &hostEmail, &hostPasswordHash, &hostCreatedAt, &hostUpdatedAt, &hostIsActive, &hostLastLogin,
+		&profileUserID, &profileDisplayName, &profileLocale, &profileTimezone, &profileCountry, &profileCity,
+		&profilePreferredGames, &profileCommPrefsJSON, &profileVisibilityJSON, &profileUpdatedAt,
 		&venueID, &venueName, &venueType, &venueAddress, &venueCity, &venueCountry, &venueLatitude, &venueLongitude,
 		&venueMetadataJSON, &venueCreatedBy, &venueCreatedAt,
 		&groupID, &groupName, &groupDescription, &groupOwnerUserID, &groupCreatedAt, &groupUpdatedAt, &groupIsActive,
@@ -152,7 +162,44 @@ func (r *eventRepository) GetByIDWithDetails(ctx context.Context, id uuid.UUID) 
 		if hostLastLogin.Valid {
 			host.LastLogin = &hostLastLogin.Time
 		}
-		eventWithDetails.Host = &host
+
+		hostWithProfile := &domain.UserWithProfile{
+			User: host,
+		}
+
+		// Set profile if exists
+		if profileUserID.Valid {
+			profile.UserID = uuid.MustParse(profileUserID.String)
+			if profileDisplayName.Valid {
+				profile.DisplayName = &profileDisplayName.String
+			}
+			profile.Locale = profileLocale.String
+			profile.Timezone = profileTimezone.String
+			if profileCountry.Valid {
+				profile.Country = &profileCountry.String
+			}
+			if profileCity.Valid {
+				profile.City = &profileCity.String
+			}
+			profile.PreferredGames = profilePreferredGames
+			profile.UpdatedAt = profileUpdatedAt.Time
+
+			// Unmarshal JSON fields
+			if profileCommPrefsJSON != nil {
+				if err := json.Unmarshal(profileCommPrefsJSON, &profile.CommunicationPreferences); err != nil {
+					return nil, fmt.Errorf("failed to unmarshal profile communication preferences: %w", err)
+				}
+			}
+			if profileVisibilityJSON != nil {
+				if err := json.Unmarshal(profileVisibilityJSON, &profile.VisibilitySettings); err != nil {
+					return nil, fmt.Errorf("failed to unmarshal profile visibility settings: %w", err)
+				}
+			}
+
+			hostWithProfile.Profile = &profile
+		}
+
+		eventWithDetails.Host = hostWithProfile
 	}
 
 	// Set venue if exists

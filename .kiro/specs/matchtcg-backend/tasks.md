@@ -151,15 +151,15 @@
     - Write integration tests for venue operations
     - _Requirements: 3.1, 3.3, 3.4_
 
-- [ ] 10. Calendar Integration Implementation
-  - [ ] 10.1 Implement ICS generation service
+- [x] 10. Calendar Integration Implementation
+  - [x] 10.1 Implement ICS generation service
     - Create CalendarService for generating RFC-compliant ICS files
     - Implement VEVENT formatting with proper timezone handling
     - Create personal calendar feed generation with authentication tokens
     - Write unit tests for ICS format validation
     - _Requirements: 6.1, 6.3, 6.4_
   
-  - [ ] 10.2 Implement calendar integration endpoints
+  - [x] 10.2 Implement calendar integration endpoints
     - Create GetEventICS endpoint for individual event downloads
     - Create GetGoogleCalendarLink endpoint for deep linking
     - Create GetPersonalCalendarFeed endpoint with token authentication
