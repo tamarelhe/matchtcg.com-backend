@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"strings"
+	"sync"
 	"testing"
 )
 
 // MockEmailProvider implements EmailProvider for testing
 type MockEmailProvider struct {
+	mu         sync.RWMutex
 	SentEmails []MockEmail
 }
 
@@ -33,6 +35,9 @@ func (m *MockEmailProvider) SendEmail(ctx context.Context, to []string, subject,
 
 // SendHTMLEmail sends an HTML email with text fallback (mock implementation)
 func (m *MockEmailProvider) SendHTMLEmail(ctx context.Context, to []string, subject, htmlBody, textBody string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.SentEmails = append(m.SentEmails, MockEmail{
 		To:       to,
 		Subject:  subject,
@@ -44,11 +49,17 @@ func (m *MockEmailProvider) SendHTMLEmail(ctx context.Context, to []string, subj
 
 // Reset clears all sent emails (for testing)
 func (m *MockEmailProvider) Reset() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
 	m.SentEmails = make([]MockEmail, 0)
 }
 
 // GetLastEmail returns the last sent email (for testing)
 func (m *MockEmailProvider) GetLastEmail() *MockEmail {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
 	if len(m.SentEmails) == 0 {
 		return nil
 	}
@@ -57,6 +68,9 @@ func (m *MockEmailProvider) GetLastEmail() *MockEmail {
 
 // GetEmailCount returns the number of sent emails (for testing)
 func (m *MockEmailProvider) GetEmailCount() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
 	return len(m.SentEmails)
 }
 
