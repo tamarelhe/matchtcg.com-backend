@@ -386,3 +386,70 @@ func (s *ConsentManagementService) HasValidConsent(ctx context.Context, userID u
 
 	return consent.Granted && consent.RevokedAt == nil, nil
 }
+
+// GDPRComplianceUseCase provides a unified interface for GDPR compliance operations
+type GDPRComplianceUseCase struct {
+	exportUseCase  *ExportUserDataUseCase
+	deleteUseCase  *DeleteUserAccountUseCase
+	consentService *ConsentManagementService
+}
+
+// NewGDPRComplianceUseCase creates a new unified GDPR compliance use case
+func NewGDPRComplianceUseCase(
+	userRepo repository.UserRepository,
+	eventRepo repository.EventRepository,
+	groupRepo repository.GroupRepository,
+	notificationRepo repository.NotificationRepository,
+) *GDPRComplianceUseCase {
+	return &GDPRComplianceUseCase{
+		exportUseCase:  NewExportUserDataUseCase(userRepo, eventRepo, groupRepo, notificationRepo),
+		deleteUseCase:  NewDeleteUserAccountUseCase(userRepo, eventRepo, groupRepo, notificationRepo),
+		consentService: NewConsentManagementService(userRepo),
+	}
+}
+
+// ExportUserData exports all user data for GDPR compliance
+func (uc *GDPRComplianceUseCase) ExportUserData(ctx context.Context, userID uuid.UUID) (map[string]interface{}, error) {
+	req := &ExportUserDataRequest{
+		UserID: userID,
+	}
+
+	result, err := uc.exportUseCase.Execute(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Data, nil
+}
+
+// DeleteUserAccount permanently deletes user account and all associated data
+func (uc *GDPRComplianceUseCase) DeleteUserAccount(ctx context.Context, userID uuid.UUID) error {
+	req := &DeleteUserAccountRequest{
+		UserID: userID,
+	}
+
+	_, err := uc.deleteUseCase.Execute(ctx, req)
+	return err
+}
+
+// UpdateConsent updates user consent for a specific type
+func (uc *GDPRComplianceUseCase) UpdateConsent(ctx context.Context, userID uuid.UUID, consentType string, granted bool, metadata map[string]interface{}) (*ConsentRecord, error) {
+	req := &ConsentUpdateRequest{
+		UserID:      userID,
+		ConsentType: consentType,
+		Granted:     granted,
+		Metadata:    metadata,
+	}
+
+	return uc.consentService.UpdateConsent(ctx, req)
+}
+
+// GetUserConsents retrieves all consent records for a user
+func (uc *GDPRComplianceUseCase) GetUserConsents(ctx context.Context, userID uuid.UUID) ([]*ConsentRecord, error) {
+	return uc.consentService.GetUserConsents(ctx, userID)
+}
+
+// HasValidConsent checks if user has granted consent for a specific type
+func (uc *GDPRComplianceUseCase) HasValidConsent(ctx context.Context, userID uuid.UUID, consentType string) (bool, error) {
+	return uc.consentService.HasValidConsent(ctx, userID, consentType)
+}

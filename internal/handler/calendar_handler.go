@@ -5,10 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 
+	"github.com/matchtcg/backend/internal/domain"
+	"github.com/matchtcg/backend/internal/middleware"
 	"github.com/matchtcg/backend/internal/repository"
 	"github.com/matchtcg/backend/internal/service"
 )
@@ -161,9 +164,6 @@ func (h *CalendarHandler) GetPersonalCalendarFeed(w http.ResponseWriter, r *http
 		return
 	}
 
-	// TODO: Validate token and get associated user ID from database
-	// For now, we'll use a placeholder approach
-
 	// Parse query parameters for filtering
 	query := r.URL.Query()
 	limitStr := query.Get("limit")
@@ -184,59 +184,69 @@ func (h *CalendarHandler) GetPersonalCalendarFeed(w http.ResponseWriter, r *http
 		}
 	}
 
-	fmt.Println(strconv.Itoa(limit))
-	fmt.Println(strconv.Itoa(offset))
-
-	// TODO: Get user ID from token validation
-	// For now, return an error indicating this needs implementation
-	http.Error(w, "Personal calendar feeds require token authentication - not yet implemented", http.StatusNotImplemented)
-
-	// This is what the implementation would look like once token validation is in place:
-	/*
-		userID := getUserIDFromToken(token) // TODO: Implement this
-
-		// Get user's events (events they're hosting or attending)
-		events, err := h.eventRepo.GetUserEvents(r.Context(), userID, limit, offset)
-		if err != nil {
-			http.Error(w, "Failed to get user events", http.StatusInternalServerError)
-			return
-		}
-
-		// Convert to EventWithDetails
-		var eventsWithDetails []*domain.EventWithDetails
-		for _, event := range events {
-			eventWithDetails, err := h.eventRepo.GetByIDWithDetails(r.Context(), event.ID)
-			if err != nil {
-				continue // Skip events that can't be loaded
+	// Validate token and get associated user ID
+	userID, err := h.calendarService.ValidateCalendarToken(token)
+	if err != nil {
+		switch err {
+		case service.ErrInvalidCalendarToken:
+			http.Error(w, "Invalid calendar token", http.StatusUnauthorized)
+		case service.ErrExpiredCalendarToken:
+			http.Error(w, "Calendar token expired", http.StatusUnauthorized)
+		default:
+			// Handle the "not yet implemented" case specifically
+			if strings.Contains(err.Error(), "not yet implemented") {
+				http.Error(w, "Personal calendar feeds require database integration - not yet implemented", http.StatusNotImplemented)
+			} else {
+				http.Error(w, "Failed to validate calendar token", http.StatusInternalServerError)
 			}
-			eventsWithDetails = append(eventsWithDetails, eventWithDetails)
 		}
+		return
+	}
 
-		// Generate personal calendar feed
-		feedName := "My MatchTCG Events"
-		icsContent, err := h.calendarService.GeneratePersonalCalendarFeed(userID, eventsWithDetails, feedName)
+	// Get user's events (events they're hosting or attending)
+	events, err := h.eventRepo.GetUserEvents(r.Context(), userID, limit, offset)
+	if err != nil {
+		http.Error(w, "Failed to get user events", http.StatusInternalServerError)
+		return
+	}
+
+	// Convert to EventWithDetails
+	var eventsWithDetails []*domain.EventWithDetails
+	for _, event := range events {
+		eventWithDetails, err := h.eventRepo.GetByIDWithDetails(r.Context(), event.ID)
 		if err != nil {
-			http.Error(w, "Failed to generate calendar feed", http.StatusInternalServerError)
-			return
+			continue // Skip events that can't be loaded
 		}
+		eventsWithDetails = append(eventsWithDetails, eventWithDetails)
+	}
 
-		// Set appropriate headers for ICS feed
-		w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
-		w.Header().Set("Cache-Control", "public, max-age=3600") // Cache for 1 hour
-		w.Header().Set("Content-Disposition", "inline; filename=\"matchtcg-events.ics\"")
+	// Generate personal calendar feed
+	feedName := "My MatchTCG Events"
+	icsContent, err := h.calendarService.GeneratePersonalCalendarFeed(userID, eventsWithDetails, feedName)
+	if err != nil {
+		http.Error(w, "Failed to generate calendar feed", http.StatusInternalServerError)
+		return
+	}
 
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(icsContent))
-	*/
+	// Set appropriate headers for ICS feed
+	w.Header().Set("Content-Type", "text/calendar; charset=utf-8")
+	w.Header().Set("Cache-Control", "public, max-age=3600") // Cache for 1 hour
+	w.Header().Set("Content-Disposition", "inline; filename=\"matchtcg-events.ics\"")
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(icsContent))
 }
 
 // RegisterRoutes registers calendar routes with the given router
-func (h *CalendarHandler) RegisterRoutes(router *mux.Router) {
-	// Event-specific calendar endpoints
-	router.HandleFunc("/events/{id}/calendar.ics", h.GetEventICS).Methods("GET")
-	router.HandleFunc("/events/{id}/google-calendar", h.GetGoogleCalendarLink).Methods("GET")
+func (h *CalendarHandler) RegisterRoutes(router *mux.Router, authMiddleware *middleware.AuthMiddleware) {
+	// Public calendar endpoints (no auth required)
+	public := router.PathPrefix("").Subrouter()
+	public.HandleFunc("/events/{id}/calendar.ics", h.GetEventICS).Methods("GET")
+	public.HandleFunc("/events/{id}/google-calendar", h.GetGoogleCalendarLink).Methods("GET")
+	public.HandleFunc("/calendar/feed/{token}", h.GetPersonalCalendarFeed).Methods("GET")
 
-	// Personal calendar feed endpoints
-	router.HandleFunc("/calendar/tokens", h.CreateCalendarToken).Methods("POST")
-	router.HandleFunc("/calendar/feed/{token}", h.GetPersonalCalendarFeed).Methods("GET")
+	// Protected calendar endpoints (require authentication)
+	protected := router.PathPrefix("").Subrouter()
+	protected.Use(authMiddleware.RequireAuth)
+	protected.HandleFunc("/calendar/tokens", h.CreateCalendarToken).Methods("POST")
 }

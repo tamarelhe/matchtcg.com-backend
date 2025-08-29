@@ -444,7 +444,8 @@ func TestCalendarHandler_GetPersonalCalendarFeed_NotImplemented(t *testing.T) {
 	calendarService := service.NewCalendarService("https://api.matchtcg.com")
 	handler := NewCalendarHandler(mockRepo, calendarService)
 
-	token := "test-token-123"
+	// Use a valid 64-character hex token to pass basic validation
+	token := "1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
 
 	// Create request
 	req := httptest.NewRequest("GET", fmt.Sprintf("/calendar/feed/%s", token), nil)
@@ -454,9 +455,9 @@ func TestCalendarHandler_GetPersonalCalendarFeed_NotImplemented(t *testing.T) {
 	// Call handler
 	handler.GetPersonalCalendarFeed(w, req)
 
-	// Verify response - should return not implemented for now
+	// Verify response - should return not implemented because database integration is missing
 	assert.Equal(t, http.StatusNotImplemented, w.Code)
-	assert.Contains(t, w.Body.String(), "not yet implemented")
+	assert.Contains(t, w.Body.String(), "database integration - not yet implemented")
 
 	mockRepo.AssertExpectations(t)
 }
@@ -481,13 +482,35 @@ func TestCalendarHandler_GetPersonalCalendarFeed_EmptyToken(t *testing.T) {
 	mockRepo.AssertExpectations(t)
 }
 
+func TestCalendarHandler_GetPersonalCalendarFeed_InvalidToken(t *testing.T) {
+	mockRepo := new(MockEventRepository)
+	calendarService := service.NewCalendarService("https://api.matchtcg.com")
+	handler := NewCalendarHandler(mockRepo, calendarService)
+
+	// Create request with invalid token (too short)
+	token := "invalid-token"
+	req := httptest.NewRequest("GET", fmt.Sprintf("/calendar/feed/%s", token), nil)
+	req = mux.SetURLVars(req, map[string]string{"token": token})
+	w := httptest.NewRecorder()
+
+	// Call handler
+	handler.GetPersonalCalendarFeed(w, req)
+
+	// Verify response
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), "Invalid calendar token")
+
+	mockRepo.AssertExpectations(t)
+}
+
 func TestCalendarHandler_RegisterRoutes(t *testing.T) {
 	mockRepo := new(MockEventRepository)
 	calendarService := service.NewCalendarService("https://api.matchtcg.com")
 	handler := NewCalendarHandler(mockRepo, calendarService)
 
 	router := mux.NewRouter()
-	handler.RegisterRoutes(router)
+	// Pass nil for auth middleware since we're only testing route registration
+	handler.RegisterRoutes(router, nil)
 
 	// Test that routes are registered
 	routes := []struct {

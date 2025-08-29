@@ -122,3 +122,12 @@ func (gm *GroupMember) HasPermission(requiredRole GroupRole) bool {
 		return false
 	}
 }
+
+// GroupWithDetails represents a group with additional details
+type GroupWithDetails struct {
+	Group
+	Owner       *UserWithProfile `json:"owner,omitempty"`
+	Members     []*GroupMember   `json:"members,omitempty"`
+	MemberCount int              `json:"member_count"`
+	UserRole    *string          `json:"user_role,omitempty"`
+}

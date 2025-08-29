@@ -1275,3 +1275,76 @@ func (uc *GetEventAttendeesUseCase) filterRSVPsForPrivacy(rsvps []*domain.EventR
 
 	return filtered
 }
+
+// EventManagementUseCase provides a unified interface for all event management operations
+type EventManagementUseCase struct {
+	createEventUseCase        *CreateEventUseCase
+	updateEventUseCase        *UpdateEventUseCase
+	deleteEventUseCase        *DeleteEventUseCase
+	getEventUseCase           *GetEventUseCase
+	searchEventsUseCase       *SearchEventsUseCase
+	searchNearbyEventsUseCase *SearchNearbyEventsUseCase
+	rsvpToEventUseCase        *RSVPToEventUseCase
+	getEventAttendeesUseCase  *GetEventAttendeesUseCase
+}
+
+// NewEventManagementUseCase creates a new unified event management use case
+func NewEventManagementUseCase(
+	eventRepo repository.EventRepository,
+	venueRepo repository.VenueRepository,
+	groupRepo repository.GroupRepository,
+	geocodingService GeocodingService,
+	notificationService NotificationService,
+	geospatialService *domain.GeospatialService,
+) *EventManagementUseCase {
+	return &EventManagementUseCase{
+		createEventUseCase:        NewCreateEventUseCase(eventRepo, venueRepo, groupRepo, geocodingService, notificationService),
+		updateEventUseCase:        NewUpdateEventUseCase(eventRepo, venueRepo, groupRepo, geocodingService, notificationService),
+		deleteEventUseCase:        NewDeleteEventUseCase(eventRepo, groupRepo, notificationService),
+		getEventUseCase:           NewGetEventUseCase(eventRepo, groupRepo),
+		searchEventsUseCase:       NewSearchEventsUseCase(eventRepo, groupRepo, geospatialService),
+		searchNearbyEventsUseCase: NewSearchNearbyEventsUseCase(eventRepo, groupRepo, geospatialService),
+		rsvpToEventUseCase:        NewRSVPToEventUseCase(eventRepo, groupRepo, notificationService),
+		getEventAttendeesUseCase:  NewGetEventAttendeesUseCase(eventRepo, groupRepo),
+	}
+}
+
+// CreateEvent creates a new event
+func (uc *EventManagementUseCase) CreateEvent(ctx context.Context, req *CreateEventRequest, hostUserID uuid.UUID) (*domain.EventWithDetails, error) {
+	return uc.createEventUseCase.Execute(ctx, req, hostUserID)
+}
+
+// UpdateEvent updates an existing event
+func (uc *EventManagementUseCase) UpdateEvent(ctx context.Context, req *UpdateEventRequest, userID uuid.UUID) (*domain.EventWithDetails, error) {
+	return uc.updateEventUseCase.Execute(ctx, req, userID)
+}
+
+// DeleteEvent deletes an event
+func (uc *EventManagementUseCase) DeleteEvent(ctx context.Context, req *DeleteEventRequest) error {
+	return uc.deleteEventUseCase.Execute(ctx, req)
+}
+
+// GetEvent retrieves an event by ID
+func (uc *EventManagementUseCase) GetEvent(ctx context.Context, req *GetEventRequest) (*domain.EventWithDetails, error) {
+	return uc.getEventUseCase.Execute(ctx, req)
+}
+
+// SearchEvents searches for events with filtering
+func (uc *EventManagementUseCase) SearchEvents(ctx context.Context, req *SearchEventsRequest) (*EventSearchResponse, error) {
+	return uc.searchEventsUseCase.Execute(ctx, req)
+}
+
+// SearchNearbyEvents searches for nearby events
+func (uc *EventManagementUseCase) SearchNearbyEvents(ctx context.Context, req *SearchNearbyEventsRequest) (*EventSearchResponse, error) {
+	return uc.searchNearbyEventsUseCase.Execute(ctx, req)
+}
+
+// RSVPToEvent handles RSVP to an event
+func (uc *EventManagementUseCase) RSVPToEvent(ctx context.Context, req *RSVPToEventRequest) (*domain.EventRSVP, error) {
+	return uc.rsvpToEventUseCase.Execute(ctx, req)
+}
+
+// GetEventAttendees retrieves event attendees
+func (uc *EventManagementUseCase) GetEventAttendees(ctx context.Context, req *GetEventAttendeesRequest) (*EventAttendeesResponse, error) {
+	return uc.getEventAttendeesUseCase.Execute(ctx, req)
+}

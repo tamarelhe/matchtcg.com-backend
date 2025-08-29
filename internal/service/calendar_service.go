@@ -19,6 +19,12 @@ type CalendarService struct {
 	baseURL string
 }
 
+// Calendar token validation errors
+var (
+	ErrInvalidCalendarToken = fmt.Errorf("invalid calendar token")
+	ErrExpiredCalendarToken = fmt.Errorf("calendar token expired")
+)
+
 // NewCalendarService creates a new calendar service
 func NewCalendarService(baseURL string) *CalendarService {
 	return &CalendarService{
@@ -185,6 +191,38 @@ func (cs *CalendarService) GenerateCalendarToken() (string, error) {
 		return "", fmt.Errorf("failed to generate random token: %w", err)
 	}
 	return hex.EncodeToString(bytes), nil
+}
+
+// ValidateCalendarToken validates a calendar token and returns the associated user ID
+// TODO: This is a placeholder implementation. In a real system, you would:
+// 1. Store tokens in a database with user associations and expiration dates
+// 2. Validate the token against the database
+// 3. Check if the token is still active and not expired
+// For now, we'll use a simple validation that extracts a mock user ID from the token
+func (cs *CalendarService) ValidateCalendarToken(token string) (uuid.UUID, error) {
+	if token == "" {
+		return uuid.Nil, ErrInvalidCalendarToken
+	}
+
+	// Basic validation - token should be 64 hex characters
+	if len(token) != 64 {
+		return uuid.Nil, ErrInvalidCalendarToken
+	}
+
+	// Check if it's valid hex
+	if _, err := hex.DecodeString(token); err != nil {
+		return uuid.Nil, ErrInvalidCalendarToken
+	}
+
+	// TODO: In a real implementation, you would:
+	// 1. Query the database for this token
+	// 2. Check if it exists and is active
+	// 3. Check if it's not expired
+	// 4. Return the associated user ID
+	//
+	// For now, we'll return a placeholder error since we don't have token storage
+	// This allows the handler to be complete but indicates the feature needs database integration
+	return uuid.Nil, fmt.Errorf("calendar token validation requires database integration - not yet implemented")
 }
 
 // buildEventDescription builds a comprehensive description for the event

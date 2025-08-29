@@ -680,3 +680,167 @@ func NewGetGroupEventsUseCase(groupRepo repository.GroupRepository, eventRepo re
 		eventRepo: eventRepo,
 	}
 }
+
+// GroupManagementUseCase provides a unified interface for all group management operations
+type GroupManagementUseCase struct {
+	createGroupUseCase       *CreateGroupUseCase
+	updateGroupUseCase       *UpdateGroupUseCase
+	deleteGroupUseCase       *DeleteGroupUseCase
+	inviteGroupMemberUseCase *InviteGroupMemberUseCase
+	removeGroupMemberUseCase *RemoveGroupMemberUseCase
+	updateMemberRoleUseCase  *UpdateMemberRoleUseCase
+	getGroupMembersUseCase   *GetGroupMembersUseCase
+	getGroupEventsUseCase    *GetGroupEventsUseCase
+}
+
+// NewGroupManagementUseCase creates a new unified group management use case
+func NewGroupManagementUseCase(
+	groupRepo repository.GroupRepository,
+	userRepo repository.UserRepository,
+	eventRepo repository.EventRepository,
+) *GroupManagementUseCase {
+	return &GroupManagementUseCase{
+		createGroupUseCase:       NewCreateGroupUseCase(groupRepo, userRepo),
+		updateGroupUseCase:       NewUpdateGroupUseCase(groupRepo),
+		deleteGroupUseCase:       NewDeleteGroupUseCase(groupRepo),
+		inviteGroupMemberUseCase: NewInviteGroupMemberUseCase(groupRepo, userRepo),
+		removeGroupMemberUseCase: NewRemoveGroupMemberUseCase(groupRepo),
+		updateMemberRoleUseCase:  NewUpdateMemberRoleUseCase(groupRepo),
+		getGroupMembersUseCase:   NewGetGroupMembersUseCase(groupRepo),
+		getGroupEventsUseCase:    NewGetGroupEventsUseCase(groupRepo, eventRepo),
+	}
+}
+
+// CreateGroup creates a new group
+func (uc *GroupManagementUseCase) CreateGroup(ctx context.Context, req *CreateGroupRequest) (*CreateGroupResponse, error) {
+	return uc.createGroupUseCase.Execute(ctx, req)
+}
+
+// UpdateGroup updates an existing group
+func (uc *GroupManagementUseCase) UpdateGroup(ctx context.Context, req *UpdateGroupRequest) (*UpdateGroupResponse, error) {
+	return uc.updateGroupUseCase.Execute(ctx, req)
+}
+
+// DeleteGroup deletes a group
+func (uc *GroupManagementUseCase) DeleteGroup(ctx context.Context, req *DeleteGroupRequest) error {
+	return uc.deleteGroupUseCase.Execute(ctx, req)
+}
+
+// InviteGroupMember invites a user to join a group
+func (uc *GroupManagementUseCase) InviteGroupMember(ctx context.Context, req *InviteGroupMemberRequest) (*InviteGroupMemberResponse, error) {
+	return uc.inviteGroupMemberUseCase.Execute(ctx, req)
+}
+
+// RemoveGroupMember removes a member from a group
+func (uc *GroupManagementUseCase) RemoveGroupMember(ctx context.Context, req *RemoveGroupMemberRequest) error {
+	return uc.removeGroupMemberUseCase.Execute(ctx, req)
+}
+
+// UpdateMemberRole updates a member's role in a group
+func (uc *GroupManagementUseCase) UpdateMemberRole(ctx context.Context, req *UpdateMemberRoleRequest) (*UpdateMemberRoleResponse, error) {
+	return uc.updateMemberRoleUseCase.Execute(ctx, req)
+}
+
+// GetGroupMembers retrieves group members
+func (uc *GroupManagementUseCase) GetGroupMembers(ctx context.Context, req *GetGroupMembersRequest) (*GetGroupMembersResponse, error) {
+	return uc.getGroupMembersUseCase.Execute(ctx, req)
+}
+
+// GetGroupEvents retrieves events for a group
+func (uc *GroupManagementUseCase) GetGroupEvents(ctx context.Context, req *GetGroupEventsRequest) (*GetGroupEventsResponse, error) {
+	return uc.getGroupEventsUseCase.Execute(ctx, req)
+}
+
+// GetGroupRequest represents the request to get a group
+type GetGroupRequest struct {
+	GroupID          uuid.UUID  `json:"group_id" validate:"required"`
+	RequestingUserID *uuid.UUID `json:"requesting_user_id,omitempty"`
+	IncludeMembers   bool       `json:"include_members,omitempty"`
+}
+
+// GetGroup retrieves a group by ID with optional member information
+func (uc *GroupManagementUseCase) GetGroup(ctx context.Context, req *GetGroupRequest) (*domain.GroupWithDetails, error) {
+	// Get group
+	group, err := uc.createGroupUseCase.groupRepo.GetByID(ctx, req.GroupID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create response with basic group info
+	groupWithDetails := &domain.GroupWithDetails{
+		Group: *group,
+	}
+
+	// Get member count and members
+	members, err := uc.createGroupUseCase.groupRepo.GetGroupMembers(ctx, req.GroupID)
+	if err == nil {
+		groupWithDetails.MemberCount = len(members)
+
+		// Include members if requested
+		if req.IncludeMembers {
+			groupWithDetails.Members = members
+		}
+
+		// Get user's role if authenticated
+		if req.RequestingUserID != nil {
+			for _, member := range members {
+				if member.UserID == *req.RequestingUserID {
+					userRole := string(member.Role)
+					groupWithDetails.UserRole = &userRole
+					break
+				}
+			}
+		}
+	}
+
+	return groupWithDetails, nil
+}
+
+// GetUserGroupsRequest represents the request to get user's groups
+type GetUserGroupsRequest struct {
+	UserID uuid.UUID `json:"user_id" validate:"required"`
+}
+
+// GetUserGroupsResponse represents the response with user's groups
+type GetUserGroupsResponse struct {
+	Groups []*domain.GroupWithDetails `json:"groups"`
+}
+
+// GetUserGroups retrieves all groups for a user
+func (uc *GroupManagementUseCase) GetUserGroups(ctx context.Context, req *GetUserGroupsRequest) (*GetUserGroupsResponse, error) {
+	// Get user's groups
+	userGroups, err := uc.createGroupUseCase.groupRepo.GetUserGroups(ctx, req.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	var groups []*domain.GroupWithDetails
+	for _, group := range userGroups {
+		// Get member count
+		memberCount, err := uc.createGroupUseCase.groupRepo.GetMemberCount(ctx, group.ID)
+		if err != nil {
+			memberCount = 0 // Default to 0 if we can't get the count
+		}
+
+		// Get user's role in this group
+		userRole, err := uc.createGroupUseCase.groupRepo.GetMemberRole(ctx, group.ID, req.UserID)
+		var userRoleStr *string
+		if err == nil {
+			roleStr := string(userRole)
+			userRoleStr = &roleStr
+		}
+
+		// Create group with details
+		groupWithDetails := &domain.GroupWithDetails{
+			Group:       *group,
+			MemberCount: memberCount,
+			UserRole:    userRoleStr,
+		}
+
+		groups = append(groups, groupWithDetails)
+	}
+
+	return &GetUserGroupsResponse{
+		Groups: groups,
+	}, nil
+}

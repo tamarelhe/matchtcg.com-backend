@@ -182,8 +182,8 @@
     - Write integration tests for notification delivery
     - _Requirements: 7.5_
 
-- [ ] 12. REST API Layer Implementation
-  - [ ] 12.1 Create HTTP handlers for authentication
+- [-] 12. REST API Layer Implementation
+  - [x] 12.1 Create HTTP handlers for authentication
     - Implement POST /auth/register endpoint with validation
     - Implement POST /auth/login endpoint with rate limiting
     - Implement POST /auth/refresh endpoint with token rotation
@@ -191,7 +191,7 @@
     - Implement OAuth callback handlers for Google and Apple
     - _Requirements: 1.1, 1.2, 1.3_
   
-  - [ ] 12.2 Create HTTP handlers for user management
+  - [x] 12.2 Create HTTP handlers for user management
     - Implement GET /me endpoint for profile retrieval
     - Implement PUT /me endpoint for profile updates
     - Implement DELETE /me endpoint for account deletion
@@ -199,7 +199,7 @@
     - Write API integration tests for all user endpoints
     - _Requirements: 1.4, 1.5, 1.6_
   
-  - [ ] 12.3 Create HTTP handlers for event management
+  - [x] 12.3 Create HTTP handlers for event management
     - Implement POST /events endpoint for event creation
     - Implement GET /events/{id} endpoint with permission checks
     - Implement PUT /events/{id} endpoint for updates
@@ -208,7 +208,7 @@
     - Implement POST /events/{id}/rsvp endpoint for attendance
     - _Requirements: 2.1, 2.2, 2.3, 2.6, 5.1_
   
-  - [ ] 12.4 Create HTTP handlers for group management
+  - [x] 12.4 Create HTTP handlers for group management
     - Implement POST /groups endpoint for group creation
     - Implement GET /groups/{id} endpoint with member filtering
     - Implement PUT /groups/{id} endpoint for updates
@@ -216,7 +216,7 @@
     - Write comprehensive API tests for group operations
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
   
-  - [ ] 12.5 Create HTTP handlers for venues and calendar
+  - [x] 12.5 Create HTTP handlers for venues and calendar
     - Implement venue CRUD endpoints with geocoding
     - Implement calendar integration endpoints (ICS, Google Calendar)
     - Implement personal calendar feed endpoint with authentication
