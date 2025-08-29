@@ -829,19 +829,6 @@ func (h *EventHandler) convertToEventResponse(event *domain.EventWithDetails, re
 			Latitude:  event.Venue.Latitude,
 			Longitude: event.Venue.Longitude,
 		}
-	} else if &event.Venue.Address != nil {
-		// Event has address but no venue
-		response.Location = &LocationInfo{
-			Address: event.Venue.Address,
-		}
-
-		// Add coordinates if available
-		if &event.Venue.Latitude != nil && &event.Venue.Longitude != nil {
-			response.Location.Coordinates = &Coordinates{
-				Latitude:  event.Venue.Latitude,
-				Longitude: event.Venue.Longitude,
-			}
-		}
 	}
 
 	// Add RSVP status if user is authenticated
