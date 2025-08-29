@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/matchtcg/backend/internal/domain"
 	"github.com/matchtcg/backend/internal/repository"
+	"github.com/matchtcg/backend/internal/service"
 )
 
 var (
@@ -94,8 +95,8 @@ type CreateEventUseCase struct {
 	eventRepo           repository.EventRepository
 	venueRepo           repository.VenueRepository
 	groupRepo           repository.GroupRepository
-	geocodingService    GeocodingService
-	notificationService NotificationService
+	geocodingService    *service.GeocodingService
+	notificationService *service.NotificationService
 }
 
 // NewCreateEventUseCase creates a new CreateEventUseCase
@@ -103,8 +104,8 @@ func NewCreateEventUseCase(
 	eventRepo repository.EventRepository,
 	venueRepo repository.VenueRepository,
 	groupRepo repository.GroupRepository,
-	geocodingService GeocodingService,
-	notificationService NotificationService,
+	geocodingService *service.GeocodingService,
+	notificationService *service.NotificationService,
 ) *CreateEventUseCase {
 	return &CreateEventUseCase{
 		eventRepo:           eventRepo,
@@ -183,26 +184,29 @@ func (uc *CreateEventUseCase) Execute(ctx context.Context, req *CreateEventReque
 	}
 
 	// Send notifications to group members if it's a group event
-	if req.GroupID != nil {
-		members, err := uc.groupRepo.GetGroupMembers(ctx, *req.GroupID)
-		if err == nil {
-			var recipients []uuid.UUID
-			for _, member := range members {
-				if member.UserID != hostUserID { // Don't notify the creator
-					recipients = append(recipients, member.UserID)
+	// TODO TMA
+	/*
+		if req.GroupID != nil {
+			members, err := uc.groupRepo.GetGroupMembers(ctx, *req.GroupID)
+			if err == nil {
+				var recipients []uuid.UUID
+				for _, member := range members {
+					if member.UserID != hostUserID { // Don't notify the creator
+						recipients = append(recipients, member.UserID)
+					}
+				}
+
+				if len(recipients) > 0 {
+					// Send notification asynchronously - don't fail if notification fails
+					go func() {
+						if err := uc.notificationService.SendEventCreatedNotification(context.Background(), event, recipients); err != nil {
+							// Log error but don't fail the event creation
+						}
+					}()
 				}
 			}
-
-			if len(recipients) > 0 {
-				// Send notification asynchronously - don't fail if notification fails
-				go func() {
-					if err := uc.notificationService.SendEventCreatedNotification(context.Background(), event, recipients); err != nil {
-						// Log error but don't fail the event creation
-					}
-				}()
-			}
 		}
-	}
+	*/
 
 	return eventWithDetails, nil
 }
@@ -212,8 +216,8 @@ type UpdateEventUseCase struct {
 	eventRepo           repository.EventRepository
 	venueRepo           repository.VenueRepository
 	groupRepo           repository.GroupRepository
-	geocodingService    GeocodingService
-	notificationService NotificationService
+	geocodingService    *service.GeocodingService
+	notificationService *service.NotificationService
 }
 
 // NewUpdateEventUseCase creates a new UpdateEventUseCase
@@ -221,8 +225,8 @@ func NewUpdateEventUseCase(
 	eventRepo repository.EventRepository,
 	venueRepo repository.VenueRepository,
 	groupRepo repository.GroupRepository,
-	geocodingService GeocodingService,
-	notificationService NotificationService,
+	geocodingService *service.GeocodingService,
+	notificationService *service.NotificationService,
 ) *UpdateEventUseCase {
 	return &UpdateEventUseCase{
 		eventRepo:           eventRepo,
@@ -341,24 +345,27 @@ func (uc *UpdateEventUseCase) Execute(ctx context.Context, req *UpdateEventReque
 	}
 
 	// Send notifications to all attendees
-	rsvps, err := uc.eventRepo.GetEventRSVPs(ctx, existingEvent.ID)
-	if err == nil && len(rsvps) > 0 {
-		var recipients []uuid.UUID
-		for _, rsvp := range rsvps {
-			if rsvp.UserID != userID { // Don't notify the updater
-				recipients = append(recipients, rsvp.UserID)
+	// TODO TMA
+	/*
+		rsvps, err := uc.eventRepo.GetEventRSVPs(ctx, existingEvent.ID)
+		if err == nil && len(rsvps) > 0 {
+			var recipients []uuid.UUID
+			for _, rsvp := range rsvps {
+				if rsvp.UserID != userID { // Don't notify the updater
+					recipients = append(recipients, rsvp.UserID)
+				}
+			}
+
+			if len(recipients) > 0 {
+				// Send notification asynchronously
+				go func() {
+					if err := uc.notificationService.SendEventUpdatedNotification(context.Background(), existingEvent, recipients); err != nil {
+						// Log error but don't fail the update
+					}
+				}()
 			}
 		}
-
-		if len(recipients) > 0 {
-			// Send notification asynchronously
-			go func() {
-				if err := uc.notificationService.SendEventUpdatedNotification(context.Background(), existingEvent, recipients); err != nil {
-					// Log error but don't fail the update
-				}
-			}()
-		}
-	}
+	*/
 
 	return eventWithDetails, nil
 }
@@ -367,14 +374,14 @@ func (uc *UpdateEventUseCase) Execute(ctx context.Context, req *UpdateEventReque
 type DeleteEventUseCase struct {
 	eventRepo           repository.EventRepository
 	groupRepo           repository.GroupRepository
-	notificationService NotificationService
+	notificationService *service.NotificationService
 }
 
 // NewDeleteEventUseCase creates a new DeleteEventUseCase
 func NewDeleteEventUseCase(
 	eventRepo repository.EventRepository,
 	groupRepo repository.GroupRepository,
-	notificationService NotificationService,
+	notificationService *service.NotificationService,
 ) *DeleteEventUseCase {
 	return &DeleteEventUseCase{
 		eventRepo:           eventRepo,
@@ -409,7 +416,9 @@ func (uc *DeleteEventUseCase) Execute(ctx context.Context, req *DeleteEventReque
 	}
 
 	// Get attendees before deletion for notifications
-	rsvps, err := uc.eventRepo.GetEventRSVPs(ctx, req.ID)
+	// TODO TMA
+	/*rsvps*/
+	_, err = uc.eventRepo.GetEventRSVPs(ctx, req.ID)
 	if err != nil {
 		return err
 	}
@@ -429,23 +438,26 @@ func (uc *DeleteEventUseCase) Execute(ctx context.Context, req *DeleteEventReque
 	}
 
 	// Send notifications to attendees
-	if len(rsvps) > 0 {
-		var recipients []uuid.UUID
-		for _, rsvp := range rsvps {
-			if rsvp.UserID != req.UserID { // Don't notify the deleter
-				recipients = append(recipients, rsvp.UserID)
+	// TODO TMA
+	/*
+		if len(rsvps) > 0 {
+			var recipients []uuid.UUID
+			for _, rsvp := range rsvps {
+				if rsvp.UserID != req.UserID { // Don't notify the deleter
+					recipients = append(recipients, rsvp.UserID)
+				}
+			}
+
+			if len(recipients) > 0 {
+				// Send notification asynchronously
+				go func() {
+					if err := uc.notificationService.SendEventDeletedNotification(context.Background(), existingEvent, recipients); err != nil {
+						// Log error but don't fail the deletion
+					}
+				}()
 			}
 		}
-
-		if len(recipients) > 0 {
-			// Send notification asynchronously
-			go func() {
-				if err := uc.notificationService.SendEventDeletedNotification(context.Background(), existingEvent, recipients); err != nil {
-					// Log error but don't fail the deletion
-				}
-			}()
-		}
-	}
+	*/
 
 	return nil
 }
@@ -932,14 +944,14 @@ type EventAttendeesResponse struct {
 type RSVPToEventUseCase struct {
 	eventRepo           repository.EventRepository
 	groupRepo           repository.GroupRepository
-	notificationService NotificationService
+	notificationService *service.NotificationService
 }
 
 // NewRSVPToEventUseCase creates a new RSVPToEventUseCase
 func NewRSVPToEventUseCase(
 	eventRepo repository.EventRepository,
 	groupRepo repository.GroupRepository,
-	notificationService NotificationService,
+	notificationService *service.NotificationService,
 ) *RSVPToEventUseCase {
 	return &RSVPToEventUseCase{
 		eventRepo:           eventRepo,
@@ -1050,14 +1062,14 @@ func (uc *RSVPToEventUseCase) canUserViewEvent(ctx context.Context, event *domai
 // ManageWaitlistService handles automatic promotion from waitlist
 type ManageWaitlistService struct {
 	eventRepo           repository.EventRepository
-	notificationService NotificationService
+	notificationService *service.NotificationService
 	asyncNotifications  bool // For testing purposes
 }
 
 // NewManageWaitlistService creates a new ManageWaitlistService
 func NewManageWaitlistService(
 	eventRepo repository.EventRepository,
-	notificationService NotificationService,
+	notificationService *service.NotificationService,
 ) *ManageWaitlistService {
 	return &ManageWaitlistService{
 		eventRepo:           eventRepo,
@@ -1073,83 +1085,89 @@ func (s *ManageWaitlistService) SetAsyncNotifications(async bool) {
 
 // PromoteFromWaitlist promotes users from waitlist when spots become available
 func (s *ManageWaitlistService) PromoteFromWaitlist(ctx context.Context, eventID uuid.UUID) error {
-	// Get the event
-	event, err := s.eventRepo.GetByID(ctx, eventID)
-	if err != nil {
-		return err
-	}
-	if event == nil {
-		return ErrEventNotFound
-	}
+	// TODO
+	// TODO TMA
+	return nil
 
-	// Check if event has capacity limit
-	if !event.HasCapacity() {
-		return nil // No capacity limit, no need to manage waitlist
-	}
-
-	// Get current going count
-	currentGoingCount, err := s.eventRepo.GetEventGoingCount(ctx, eventID)
-	if err != nil {
-		return err
-	}
-
-	// Calculate available spots
-	availableSpots := *event.Capacity - currentGoingCount
-	if availableSpots <= 0 {
-		return nil // No spots available
-	}
-
-	// Get waitlisted users (ordered by creation time - first come, first served)
-	waitlistedRSVPs, err := s.eventRepo.GetWaitlistedRSVPs(ctx, eventID)
-	if err != nil {
-		return err
-	}
-
-	if len(waitlistedRSVPs) == 0 {
-		return nil // No one on waitlist
-	}
-
-	// Promote users from waitlist
-	promotedCount := 0
-	var promotedUsers []uuid.UUID
-
-	for _, rsvp := range waitlistedRSVPs {
-		if promotedCount >= availableSpots {
-			break
+	/*
+		// Get the event
+		event, err := s.eventRepo.GetByID(ctx, eventID)
+		if err != nil {
+			return err
+		}
+		if event == nil {
+			return ErrEventNotFound
 		}
 
-		// Update RSVP status to "going"
-		rsvp.Status = domain.RSVPStatusGoing
-		rsvp.UpdatedAt = time.Now().UTC()
-
-		if err := s.eventRepo.UpdateRSVP(ctx, rsvp); err != nil {
-			// Log error but continue with other promotions
-			continue
+		// Check if event has capacity limit
+		if !event.HasCapacity() {
+			return nil // No capacity limit, no need to manage waitlist
 		}
 
-		promotedUsers = append(promotedUsers, rsvp.UserID)
-		promotedCount++
-	}
+		// Get current going count
+		currentGoingCount, err := s.eventRepo.GetEventGoingCount(ctx, eventID)
+		if err != nil {
+			return err
+		}
 
-	// Send notifications to promoted users
-	if len(promotedUsers) > 0 {
-		if s.asyncNotifications {
-			go func() {
-				// This would need a specific notification method for waitlist promotion
-				// For now, we'll use the event updated notification
-				if err := s.notificationService.SendEventUpdatedNotification(context.Background(), event, promotedUsers); err != nil {
+		// Calculate available spots
+		availableSpots := *event.Capacity - currentGoingCount
+		if availableSpots <= 0 {
+			return nil // No spots available
+		}
+
+		// Get waitlisted users (ordered by creation time - first come, first served)
+		waitlistedRSVPs, err := s.eventRepo.GetWaitlistedRSVPs(ctx, eventID)
+		if err != nil {
+			return err
+		}
+
+		if len(waitlistedRSVPs) == 0 {
+			return nil // No one on waitlist
+		}
+
+		// Promote users from waitlist
+		promotedCount := 0
+		var promotedUsers []uuid.UUID
+
+		for _, rsvp := range waitlistedRSVPs {
+			if promotedCount >= availableSpots {
+				break
+			}
+
+			// Update RSVP status to "going"
+			rsvp.Status = domain.RSVPStatusGoing
+			rsvp.UpdatedAt = time.Now().UTC()
+
+			if err := s.eventRepo.UpdateRSVP(ctx, rsvp); err != nil {
+				// Log error but continue with other promotions
+				continue
+			}
+
+			promotedUsers = append(promotedUsers, rsvp.UserID)
+			promotedCount++
+		}
+
+		// Send notifications to promoted users
+		if len(promotedUsers) > 0 {
+			if s.asyncNotifications {
+				go func() {
+					// This would need a specific notification method for waitlist promotion
+					// For now, we'll use the event updated notification
+					if err := s.notificationService.SendEventUpdatedNotification(context.Background(), event, promotedUsers); err != nil {
+						// Log error but don't fail the promotion
+					}
+				}()
+			} else {
+				// Synchronous for testing
+				if err := s.notificationService.SendEventUpdatedNotification(ctx, event, promotedUsers); err != nil {
 					// Log error but don't fail the promotion
 				}
-			}()
-		} else {
-			// Synchronous for testing
-			if err := s.notificationService.SendEventUpdatedNotification(ctx, event, promotedUsers); err != nil {
-				// Log error but don't fail the promotion
 			}
 		}
-	}
 
-	return nil
+		return nil
+	*/
 }
 
 // GetEventAttendeesUseCase handles retrieving event attendees with privacy filtering
@@ -1293,8 +1311,8 @@ func NewEventManagementUseCase(
 	eventRepo repository.EventRepository,
 	venueRepo repository.VenueRepository,
 	groupRepo repository.GroupRepository,
-	geocodingService GeocodingService,
-	notificationService NotificationService,
+	geocodingService *service.GeocodingService,
+	notificationService *service.NotificationService,
 	geospatialService *domain.GeospatialService,
 ) *EventManagementUseCase {
 	return &EventManagementUseCase{

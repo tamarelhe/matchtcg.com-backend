@@ -2,7 +2,7 @@
 
 -- Composite indexes for event search optimization
 CREATE INDEX idx_events_game_start_visibility ON events(game, start_at, visibility) 
-WHERE start_at > NOW() AND visibility IN ('public', 'group_only');
+WHERE visibility IN ('public', 'group_only');
 
 -- Index for user's events (hosting)
 CREATE INDEX idx_events_host_start ON events(host_user_id, start_at DESC);
@@ -35,4 +35,4 @@ CREATE INDEX idx_groups_name_trgm ON groups USING GIN(name gin_trgm_ops);
 
 -- Index for event capacity management
 CREATE INDEX idx_events_capacity_start ON events(capacity, start_at) 
-WHERE capacity IS NOT NULL AND start_at > NOW();
+WHERE capacity IS NOT NULL;

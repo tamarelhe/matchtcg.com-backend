@@ -100,8 +100,10 @@ func NewRouter(config RouterConfig) *mux.Router {
 	router.HandleFunc("/health", healthCheckHandler).Methods("GET")
 
 	// API documentation endpoints
-	router.HandleFunc("/api/docs", apiDocsHandler).Methods("GET")
-	router.PathPrefix("/docs/").Handler(http.StripPrefix("/docs/", http.FileServer(http.Dir("./docs/"))))
+	router.Handle("/api/docs", config.AuthMiddleware.AllowOnlyLocal(http.HandlerFunc(apiDocsHandler))).Methods("GET")
+
+	docs := http.StripPrefix("/docs/", http.FileServer(http.Dir("./docs/")))
+	router.PathPrefix("/docs/").Handler(config.AuthMiddleware.AllowOnlyLocal(docs))
 
 	// Redirect /docs to swagger UI
 	router.HandleFunc("/docs", func(w http.ResponseWriter, r *http.Request) {

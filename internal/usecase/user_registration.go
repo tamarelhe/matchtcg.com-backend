@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/matchtcg/backend/internal/constant"
 	"github.com/matchtcg/backend/internal/domain"
 	"github.com/matchtcg/backend/internal/repository"
 )
@@ -13,6 +14,7 @@ import (
 var (
 	ErrEmailAlreadyExists = errors.New("email already exists")
 	ErrWeakPassword       = errors.New("password does not meet security requirements")
+	ErrInvalidCountry     = errors.New("invalid country")
 )
 
 // PasswordHasher defines the interface for password hashing operations
@@ -68,6 +70,12 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, req *RegisterUserReq
 	// Validate password strength
 	if err := uc.validatePassword(req.Password); err != nil {
 		return nil, err
+	}
+
+	// Validate country code
+	_, ok := constant.ISO3166Alpha2[req.Country]
+	if !ok {
+		return nil, ErrInvalidCountry
 	}
 
 	// Hash password

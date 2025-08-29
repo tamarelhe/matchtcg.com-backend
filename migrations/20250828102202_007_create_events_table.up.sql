@@ -35,7 +35,7 @@ CREATE TABLE events (
 CREATE INDEX idx_events_location_gist ON events USING GIST(location);
 
 -- Create other indexes for performance
-CREATE INDEX idx_events_start_at ON events(start_at) WHERE start_at > NOW();
+CREATE INDEX idx_events_start_at ON events (start_at);
 CREATE INDEX idx_events_game_visibility ON events(game, visibility);
 CREATE INDEX idx_events_host_user_id ON events(host_user_id);
 CREATE INDEX idx_events_group_id ON events(group_id) WHERE group_id IS NOT NULL;

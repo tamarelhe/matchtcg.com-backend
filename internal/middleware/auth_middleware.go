@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"net"
 	"net/http"
 	"strings"
 
@@ -97,6 +98,17 @@ func (m *AuthMiddleware) OptionalAuth(next http.Handler) http.Handler {
 		}
 
 		// Continue with request (authenticated or not)
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (m *AuthMiddleware) AllowOnlyLocal(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+		if ip != "127.0.0.1" && ip != "::1" {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }

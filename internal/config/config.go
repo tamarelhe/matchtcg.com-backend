@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 // Config holds all configuration for the application
@@ -64,6 +66,7 @@ type EmailConfig struct {
 	SMTPPassword string
 	FromEmail    string
 	FromName     string
+	BaseURL      string
 }
 
 // GeocodingConfig holds geocoding service configuration
@@ -81,6 +84,8 @@ type CORSConfig struct {
 
 // Load loads configuration from environment variables
 func Load() (*Config, error) {
+	// Load .env file if it exists (ignore error if file doesn't exist)
+	_ = godotenv.Load()
 	cfg := &Config{
 		Server: ServerConfig{
 			Port:         getEnvAsInt("PORT", 8080),
@@ -119,6 +124,7 @@ func Load() (*Config, error) {
 			SMTPPassword: getEnv("SMTP_PASS", ""),
 			FromEmail:    getEnv("FROM_EMAIL", "noreply@matchtcg.com"),
 			FromName:     getEnv("FROM_NAME", "MatchTCG"),
+			BaseURL:      getEnv("BASE_URL", ""),
 		},
 		Geocoding: GeocodingConfig{
 			NominatimBaseURL: getEnv("NOMINATIM_BASE_URL", "https://nominatim.openstreetmap.org"),

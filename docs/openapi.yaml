@@ -37,6 +37,22 @@ security:
   - BearerAuth: []
   - {}
 
+tags:
+  - name: System
+    description: System health and status endpoints
+  - name: Authentication
+    description: User authentication and authorization
+  - name: User Management
+    description: User profile and account management
+  - name: Event Management
+    description: Event creation, search, and RSVP management
+  - name: Group Management
+    description: Group creation and member management
+  - name: Venue Management
+    description: Venue creation and location management
+  - name: Calendar Integration
+    description: Calendar export and integration features 
+
 paths:
   # Health Check
   /health:
@@ -413,7 +429,7 @@ paths:
       parameters:
         - name: near
           in: query
-          description: Search near coordinates (format: "lat,lon")
+          description: Search near coordinates lat,lon)
           schema:
             type: string
             example: "38.7223,-9.1393"
@@ -752,6 +768,769 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+   
+  /groups:
+    post:
+      tags:
+        - Group Management
+      summary: Create group
+      description: Create a new group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateGroupRequest'
+      responses:
+        '201':
+          description: Group created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /groups/{id}:
+    get:
+      tags:
+        - Group Management
+      summary: Get group details
+      description: Retrieve detailed information about a specific group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+            format: uuid
+        - name: include_members
+          in: query
+          description: Include member list in response
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Group details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Access denied to private group
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Group not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Group Management
+      summary: Update group
+      description: Update an existing group (owner/admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateGroupRequest'
+      responses:
+        '200':
+          description: Group updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Only group owner or admin can update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Group not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Group Management
+      summary: Delete group
+      description: Delete an existing group (owner only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Group deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Group successfully deleted
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Only group owner can delete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Group not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /groups/{id}/members:
+    post:
+      tags:
+        - Group Management
+      summary: Add group member
+      description: Add a new member to the group (owner/admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddMemberRequest'
+      responses:
+        '201':
+          description: Member added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Member successfully added to group
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Only group owner or admin can add members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Group or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /groups/{id}/members/{userId}:
+    delete:
+      tags:
+        - Group Management
+      summary: Remove group member
+      description: Remove a member from the group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: path
+          required: true
+          description: User ID to remove
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Member removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Member successfully removed from group
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Insufficient permissions to remove member
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Group or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Group Management
+      summary: Update member role
+      description: Update a member's role in the group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Group ID
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: path
+          required: true
+          description: User ID to update
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateMemberRoleRequest'
+      responses:
+        '200':
+          description: Member role updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Member role successfully updated
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Insufficient permissions to update member role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Group or user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /me/groups:
+    get:
+      tags:
+        - Group Management
+      summary: Get user's groups
+      description: Retrieve all groups the authenticated user belongs to
+      responses:
+        '200':
+          description: User's groups retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Venue Management Endpoints
+  /venues:
+    get:
+      tags:
+        - Venue Management
+      summary: Search venues
+      description: Search for venues with various filters including geospatial search
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: near
+          in: query
+          description: Search near coordinates ("lat,lon")
+          schema:
+            type: string
+            example: "38.7223,-9.1393"
+        - name: radius_km
+          in: query
+          description: Search radius in kilometers
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            example: 25
+        - name: query
+          in: query
+          description: Text search in venue name
+          schema:
+            type: string
+            example: "game store"
+        - name: type
+          in: query
+          description: Filter by venue type
+          schema:
+            type: string
+            enum: [store, home, other]
+        - name: city
+          in: query
+          description: Filter by city
+          schema:
+            type: string
+            example: "Lisbon"
+        - name: country
+          in: query
+          description: Filter by country
+          schema:
+            type: string
+            example: "Portugal"
+        - name: limit
+          in: query
+          description: Number of results per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Venues retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VenueListResponse'
+        '400':
+          description: Invalid search parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Venue Management
+      summary: Create venue
+      description: Create a new venue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVenueRequest'
+      responses:
+        '201':
+          description: Venue created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VenueResponse'
+        '400':
+          description: Invalid request data or geocoding failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /venues/{id}:
+    get:
+      tags:
+        - Venue Management
+      summary: Get venue details
+      description: Retrieve detailed information about a specific venue
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Venue ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Venue details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VenueResponse'
+        '404':
+          description: Venue not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Venue Management
+      summary: Update venue
+      description: Update an existing venue (creator only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Venue ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVenueRequest'
+      responses:
+        '200':
+          description: Venue updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VenueResponse'
+        '400':
+          description: Invalid request data or geocoding failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Only venue creator can update
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Venue not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Venue Management
+      summary: Delete venue
+      description: Delete an existing venue (creator only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Venue ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Venue deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Venue successfully deleted
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Only venue creator can delete
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Venue not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Calendar Integration Endpoints
+  /events/{id}/calendar.ics:
+    get:
+      tags:
+        - Calendar Integration
+      summary: Download event ICS file
+      description: Download an ICS calendar file for a specific event
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Event ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: ICS file generated successfully
+          content:
+            text/calendar:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              description: Attachment filename
+              schema:
+                type: string
+                example: 'attachment; filename="event.ics"'
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /events/{id}/google-calendar:
+    get:
+      tags:
+        - Calendar Integration
+      summary: Get Google Calendar link
+      description: Get a deep link to add event to Google Calendar
+      security:
+        - BearerAuth: []
+        - {}
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Event ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Google Calendar link generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  google_calendar_url:
+                    type: string
+                    format: uri
+                    example: "https://calendar.google.com/calendar/render?action=TEMPLATE&text=..."
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /calendar/tokens:
+    post:
+      tags:
+        - Calendar Integration
+      summary: Create calendar token
+      description: Create a new token for personal calendar feed access
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalendarTokenRequest'
+      responses:
+        '201':
+          description: Calendar token created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CalendarTokenResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /calendar/feed/{token}:
+    get:
+      tags:
+        - Calendar Integration
+      summary: Personal calendar feed
+      description: Get personal calendar feed with user's events
+      security: []
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: Calendar access token
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Number of events to include
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: offset
+          in: query
+          description: Pagination offset
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Personal calendar feed generated successfully
+          content:
+            text/calendar:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              description: Inline filename
+              schema:
+                type: string
+                example: 'inline; filename="matchtcg-events.ics"'
+            Cache-Control:
+              description: Cache control header
+              schema:
+                type: string
+                example: 'public, max-age=3600'
+        '401':
+          description: Invalid or expired calendar token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '501':
+          description: Feature not yet implemented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'  
 
 components:
   securitySchemes:
@@ -1347,785 +2126,6 @@ components:
             - $ref: '#/components/schemas/Coordinates'
             - nullable: true
 
-tags:
-  - name: System
-    description: System health and status endpoints
-  - name: Authentication
-    description: User authentication and authorization
-  - name: User Management
-    description: User profile and account management
-  - name: Event Management
-    description: Event creation, search, and RSVP management
-  - name: Group Management
-    description: Group creation and member management
-  - name: Venue Management
-    description: Venue creation and location management
-  - name: Calendar Integration
-    description: Calendar export and integration features 
- # Group Management Endpoints
-  /groups:
-    post:
-      tags:
-        - Group Management
-      summary: Create group
-      description: Create a new group
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateGroupRequest'
-      responses:
-        '201':
-          description: Group created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GroupResponse'
-        '400':
-          description: Invalid request data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /groups/{id}:
-    get:
-      tags:
-        - Group Management
-      summary: Get group details
-      description: Retrieve detailed information about a specific group
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Group ID
-          schema:
-            type: string
-            format: uuid
-        - name: include_members
-          in: query
-          description: Include member list in response
-          schema:
-            type: boolean
-            default: false
-      responses:
-        '200':
-          description: Group details retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GroupResponse'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Access denied to private group
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Group not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    put:
-      tags:
-        - Group Management
-      summary: Update group
-      description: Update an existing group (owner/admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Group ID
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateGroupRequest'
-      responses:
-        '200':
-          description: Group updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GroupResponse'
-        '400':
-          description: Invalid request data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Only group owner or admin can update
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Group not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    delete:
-      tags:
-        - Group Management
-      summary: Delete group
-      description: Delete an existing group (owner only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Group ID
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Group deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Group successfully deleted
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Only group owner can delete
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Group not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /groups/{id}/members:
-    post:
-      tags:
-        - Group Management
-      summary: Add group member
-      description: Add a new member to the group (owner/admin only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Group ID
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AddMemberRequest'
-      responses:
-        '201':
-          description: Member added successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Member successfully added to group
-        '400':
-          description: Invalid request data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Only group owner or admin can add members
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Group or user not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /groups/{id}/members/{userId}:
-    delete:
-      tags:
-        - Group Management
-      summary: Remove group member
-      description: Remove a member from the group
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Group ID
-          schema:
-            type: string
-            format: uuid
-        - name: userId
-          in: path
-          required: true
-          description: User ID to remove
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Member removed successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Member successfully removed from group
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Insufficient permissions to remove member
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Group or user not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    put:
-      tags:
-        - Group Management
-      summary: Update member role
-      description: Update a member's role in the group
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Group ID
-          schema:
-            type: string
-            format: uuid
-        - name: userId
-          in: path
-          required: true
-          description: User ID to update
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateMemberRoleRequest'
-      responses:
-        '200':
-          description: Member role updated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Member role successfully updated
-        '400':
-          description: Invalid request data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Insufficient permissions to update member role
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Group or user not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /me/groups:
-    get:
-      tags:
-        - Group Management
-      summary: Get user's groups
-      description: Retrieve all groups the authenticated user belongs to
-      responses:
-        '200':
-          description: User's groups retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GroupListResponse'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  # Venue Management Endpoints
-  /venues:
-    get:
-      tags:
-        - Venue Management
-      summary: Search venues
-      description: Search for venues with various filters including geospatial search
-      security:
-        - BearerAuth: []
-        - {}
-      parameters:
-        - name: near
-          in: query
-          description: Search near coordinates (format: "lat,lon")
-          schema:
-            type: string
-            example: "38.7223,-9.1393"
-        - name: radius_km
-          in: query
-          description: Search radius in kilometers
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            example: 25
-        - name: query
-          in: query
-          description: Text search in venue name
-          schema:
-            type: string
-            example: "game store"
-        - name: type
-          in: query
-          description: Filter by venue type
-          schema:
-            type: string
-            enum: [store, home, other]
-        - name: city
-          in: query
-          description: Filter by city
-          schema:
-            type: string
-            example: "Lisbon"
-        - name: country
-          in: query
-          description: Filter by country
-          schema:
-            type: string
-            example: "Portugal"
-        - name: limit
-          in: query
-          description: Number of results per page
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 20
-        - name: offset
-          in: query
-          description: Pagination offset
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
-      responses:
-        '200':
-          description: Venues retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VenueListResponse'
-        '400':
-          description: Invalid search parameters
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    post:
-      tags:
-        - Venue Management
-      summary: Create venue
-      description: Create a new venue
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateVenueRequest'
-      responses:
-        '201':
-          description: Venue created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VenueResponse'
-        '400':
-          description: Invalid request data or geocoding failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /venues/{id}:
-    get:
-      tags:
-        - Venue Management
-      summary: Get venue details
-      description: Retrieve detailed information about a specific venue
-      security:
-        - BearerAuth: []
-        - {}
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Venue ID
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Venue details retrieved successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VenueResponse'
-        '404':
-          description: Venue not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    put:
-      tags:
-        - Venue Management
-      summary: Update venue
-      description: Update an existing venue (creator only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Venue ID
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UpdateVenueRequest'
-      responses:
-        '200':
-          description: Venue updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VenueResponse'
-        '400':
-          description: Invalid request data or geocoding failed
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Only venue creator can update
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Venue not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-    delete:
-      tags:
-        - Venue Management
-      summary: Delete venue
-      description: Delete an existing venue (creator only)
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Venue ID
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Venue deleted successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Venue successfully deleted
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: Only venue creator can delete
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Venue not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  # Calendar Integration Endpoints
-  /events/{id}/calendar.ics:
-    get:
-      tags:
-        - Calendar Integration
-      summary: Download event ICS file
-      description: Download an ICS calendar file for a specific event
-      security:
-        - BearerAuth: []
-        - {}
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Event ID
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: ICS file generated successfully
-          content:
-            text/calendar:
-              schema:
-                type: string
-                format: binary
-          headers:
-            Content-Disposition:
-              description: Attachment filename
-              schema:
-                type: string
-                example: 'attachment; filename="event.ics"'
-        '404':
-          description: Event not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /events/{id}/google-calendar:
-    get:
-      tags:
-        - Calendar Integration
-      summary: Get Google Calendar link
-      description: Get a deep link to add event to Google Calendar
-      security:
-        - BearerAuth: []
-        - {}
-      parameters:
-        - name: id
-          in: path
-          required: true
-          description: Event ID
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Google Calendar link generated successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  google_calendar_url:
-                    type: string
-                    format: uri
-                    example: "https://calendar.google.com/calendar/render?action=TEMPLATE&text=..."
-        '404':
-          description: Event not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /calendar/tokens:
-    post:
-      tags:
-        - Calendar Integration
-      summary: Create calendar token
-      description: Create a new token for personal calendar feed access
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CalendarTokenRequest'
-      responses:
-        '201':
-          description: Calendar token created successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CalendarTokenResponse'
-        '400':
-          description: Invalid request data
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Authentication required
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /calendar/feed/{token}:
-    get:
-      tags:
-        - Calendar Integration
-      summary: Personal calendar feed
-      description: Get personal calendar feed with user's events
-      security: []
-      parameters:
-        - name: token
-          in: path
-          required: true
-          description: Calendar access token
-          schema:
-            type: string
-        - name: limit
-          in: query
-          description: Number of events to include
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            default: 50
-        - name: offset
-          in: query
-          description: Pagination offset
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
-      responses:
-        '200':
-          description: Personal calendar feed generated successfully
-          content:
-            text/calendar:
-              schema:
-                type: string
-                format: binary
-          headers:
-            Content-Disposition:
-              description: Inline filename
-              schema:
-                type: string
-                example: 'inline; filename="matchtcg-events.ics"'
-            Cache-Control:
-              description: Cache control header
-              schema:
-                type: string
-                example: 'public, max-age=3600'
-        '401':
-          description: Invalid or expired calendar token
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '501':
-          description: Feature not yet implemented
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'  
-  # Group Management Schemas
     CreateGroupRequest:
       type: object
       required:

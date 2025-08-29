@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -139,7 +140,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		case usecase.ErrWeakPassword:
 			h.writeErrorResponse(w, http.StatusBadRequest, "weak_password", "Password does not meet security requirements")
 		default:
-			h.writeErrorResponse(w, http.StatusInternalServerError, "registration_failed", "Failed to register user")
+			h.writeErrorResponse(w, http.StatusInternalServerError, "registration_failed", fmt.Sprintf("Failed to register user: %s", err))
 		}
 		return
 	}
