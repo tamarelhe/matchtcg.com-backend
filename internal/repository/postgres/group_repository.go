@@ -7,17 +7,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matchtcg/backend/internal/domain"
 	"github.com/matchtcg/backend/internal/repository"
+	"github.com/matchtcg/backend/internal/service"
 )
 
 type groupRepository struct {
-	db *pgxpool.Pool
+	db service.DB
 }
 
 // NewGroupRepository creates a new PostgreSQL group repository
-func NewGroupRepository(db *pgxpool.Pool) repository.GroupRepository {
+func NewGroupRepository(db service.DB) repository.GroupRepository {
 	return &groupRepository{db: db}
 }
 

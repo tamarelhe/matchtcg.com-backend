@@ -10,17 +10,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matchtcg/backend/internal/domain"
 	"github.com/matchtcg/backend/internal/repository"
+	"github.com/matchtcg/backend/internal/service"
 )
 
 type eventRepository struct {
-	db *pgxpool.Pool
+	db service.DB
 }
 
 // NewEventRepository creates a new PostgreSQL event repository
-func NewEventRepository(db *pgxpool.Pool) repository.EventRepository {
+func NewEventRepository(db service.DB) repository.EventRepository {
 	return &eventRepository{db: db}
 }
 

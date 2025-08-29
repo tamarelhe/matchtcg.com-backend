@@ -93,11 +93,6 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, req *RegisterUserReq
 		return nil, err
 	}
 
-	// Create user in repository
-	if err := uc.userRepo.Create(ctx, user); err != nil {
-		return nil, err
-	}
-
 	// Set default values for profile
 	locale := req.Locale
 	if locale == "" {
@@ -133,8 +128,8 @@ func (uc *RegisterUserUseCase) Execute(ctx context.Context, req *RegisterUserReq
 		return nil, err
 	}
 
-	// Create profile in repository
-	if err := uc.userRepo.CreateProfile(ctx, profile); err != nil {
+	// Create user + profile in repository
+	if err := uc.userRepo.CreateUserWithProfile(ctx, user, profile); err != nil {
 		return nil, err
 	}
 

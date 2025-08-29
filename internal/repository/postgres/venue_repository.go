@@ -8,17 +8,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matchtcg/backend/internal/domain"
 	"github.com/matchtcg/backend/internal/repository"
+	"github.com/matchtcg/backend/internal/service"
 )
 
 type venueRepository struct {
-	db *pgxpool.Pool
+	db service.DB
 }
 
 // NewVenueRepository creates a new PostgreSQL venue repository
-func NewVenueRepository(db *pgxpool.Pool) repository.VenueRepository {
+func NewVenueRepository(db service.DB) repository.VenueRepository {
 	return &venueRepository{db: db}
 }
 

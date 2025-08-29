@@ -9,17 +9,17 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matchtcg/backend/internal/domain"
 	"github.com/matchtcg/backend/internal/repository"
+	"github.com/matchtcg/backend/internal/service"
 )
 
 type notificationRepository struct {
-	db *pgxpool.Pool
+	db service.DB
 }
 
 // NewNotificationRepository creates a new PostgreSQL notification repository
-func NewNotificationRepository(db *pgxpool.Pool) repository.NotificationRepository {
+func NewNotificationRepository(db service.DB) repository.NotificationRepository {
 	return &notificationRepository{db: db}
 }
 

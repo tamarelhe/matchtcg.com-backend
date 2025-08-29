@@ -10,7 +10,7 @@ import (
 
 // UserRepository defines the interface for user data operations
 type UserRepository interface {
-	// Basic CRUD operations
+	// User operations
 	Create(ctx context.Context, user *domain.User) error
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error)
 	GetByEmail(ctx context.Context, email string) (*domain.User, error)
@@ -22,6 +22,7 @@ type UserRepository interface {
 	GetProfile(ctx context.Context, userID uuid.UUID) (*domain.Profile, error)
 	UpdateProfile(ctx context.Context, profile *domain.Profile) error
 	GetUserWithProfile(ctx context.Context, userID uuid.UUID) (*domain.UserWithProfile, error)
+	CreateUserWithProfile(ctx context.Context, user *domain.User, profile *domain.Profile) error
 
 	// GDPR compliance methods
 	ExportUserData(ctx context.Context, userID uuid.UUID) (map[string]interface{}, error)

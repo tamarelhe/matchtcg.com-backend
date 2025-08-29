@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -18,9 +20,24 @@ type DatabaseConfig struct {
 	SSLMode  string
 }
 
+// DBExecutor defines the basic database operations that both DB and Tx can perform
+type DBExecutor interface {
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+}
+
+// DB extends DBExecutor with connection management operations
+type DB interface {
+	DBExecutor
+	Begin(ctx context.Context) (pgx.Tx, error)
+	Close()
+	Ping(ctx context.Context) error
+}
+
 // DatabaseClient wraps database connection with common operations
 type DatabaseClient struct {
-	DB *pgxpool.Pool
+	DB DB
 }
 
 // NewDatabaseClient creates a new database client

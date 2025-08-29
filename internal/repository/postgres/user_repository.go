@@ -9,27 +9,58 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/matchtcg/backend/internal/domain"
 	"github.com/matchtcg/backend/internal/repository"
+	"github.com/matchtcg/backend/internal/service"
 )
 
 type userRepository struct {
-	db *pgxpool.Pool
+	db service.DB
 }
 
 // NewUserRepository creates a new PostgreSQL user repository
-func NewUserRepository(db *pgxpool.Pool) repository.UserRepository {
+func NewUserRepository(db service.DB) repository.UserRepository {
 	return &userRepository{db: db}
 }
 
-// Create creates a new user
+// Create user and profile
+func (r *userRepository) CreateUserWithProfile(ctx context.Context, user *domain.User, profile *domain.Profile) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	if err = r.CreateTx(ctx, tx, user); err != nil {
+		return err
+	}
+
+	if err = r.CreateProfileTx(ctx, tx, profile); err != nil {
+		return err
+	}
+
+	if err = tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (r *userRepository) Create(ctx context.Context, user *domain.User) error {
+	return r.create(ctx, r.db, user)
+}
+
+func (r *userRepository) CreateTx(ctx context.Context, tx pgx.Tx, user *domain.User) error {
+	return r.create(ctx, tx, user)
+}
+
+// Create creates a new user
+func (r *userRepository) create(ctx context.Context, exec service.DBExecutor, user *domain.User) error {
 	query := `
 		INSERT INTO users (id, email, password_hash, created_at, updated_at, is_active, last_login)
 		VALUES ($1, $2, $3, $4, $5, $6, $7)`
 
-	_, err := r.db.Exec(ctx, query,
+	_, err := exec.Exec(ctx, query,
 		user.ID,
 		user.Email,
 		user.PasswordHash,
@@ -145,8 +176,16 @@ func (r *userRepository) Delete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-// CreateProfile creates a user profile
 func (r *userRepository) CreateProfile(ctx context.Context, profile *domain.Profile) error {
+	return r.createProfile(ctx, r.db, profile)
+}
+
+func (r *userRepository) CreateProfileTx(ctx context.Context, tx pgx.Tx, profile *domain.Profile) error {
+	return r.createProfile(ctx, tx, profile)
+}
+
+// CreateProfile creates a user profile
+func (r *userRepository) createProfile(ctx context.Context, exec service.DBExecutor, profile *domain.Profile) error {
 	preferredGamesJSON, err := json.Marshal(profile.PreferredGames)
 	if err != nil {
 		return fmt.Errorf("failed to marshal preferred games: %w", err)
@@ -167,7 +206,7 @@ func (r *userRepository) CreateProfile(ctx context.Context, profile *domain.Prof
 			preferred_games, communication_preferences, visibility_settings, updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 
-	_, err = r.db.Exec(ctx, query,
+	_, err = exec.Exec(ctx, query,
 		profile.UserID,
 		profile.DisplayName,
 		profile.Locale,
