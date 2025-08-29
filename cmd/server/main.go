@@ -61,8 +61,8 @@ func main() {
 	geospatialService := domain.NewGeospatialService()
 
 	jwtSrvCfg := service.JWTConfig{
-		PrivateKeyPEM:  "",
-		PublicKeyPEM:   "",
+		PrivateKeyPEM:  "", //cfg.JWT.PrivateKey,
+		PublicKeyPEM:   "", //cfg.JWT.PublicKey,
 		AccessTTL:      cfg.JWT.AccessTTL,
 		RefreshTTL:     cfg.JWT.RefreshTTL,
 		BlacklistStore: nil,

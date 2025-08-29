@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/matchtcg/backend/internal/domain"
 )
 
@@ -154,6 +155,12 @@ func (m *mockUserRepository) GetUserWithProfile(ctx context.Context, userID uuid
 
 // Implement other required methods (not used in tests)
 func (m *mockUserRepository) Create(ctx context.Context, user *domain.User) error { return nil }
+func (m *mockUserRepository) CreateTx(ctx context.Context, tx pgx.Tx, user *domain.User) error {
+	return nil
+}
+func (r *mockUserRepository) CreateUserWithProfile(ctx context.Context, user *domain.User, profile *domain.Profile) error {
+	return nil
+}
 func (m *mockUserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error) {
 	return nil, nil
 }

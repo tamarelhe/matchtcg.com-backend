@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -38,6 +39,7 @@ type AuthHandler struct {
 	userRepo interface {
 		GetByEmail(ctx context.Context, email string) (*domain.User, error)
 		GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error)
+		Update(ctx context.Context, user *domain.User) error
 	}
 }
 
@@ -94,6 +96,7 @@ func NewAuthHandler(
 	userRepo interface {
 		GetByEmail(ctx context.Context, email string) (*domain.User, error)
 		GetByID(ctx context.Context, id uuid.UUID) (*domain.User, error)
+		Update(ctx context.Context, user *domain.User) error
 	},
 ) *AuthHandler {
 	return &AuthHandler{
@@ -203,6 +206,14 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	tokenPair, err := h.jwtService.GenerateTokenPair(user.ID.String(), user.Email)
 	if err != nil {
 		h.writeErrorResponse(w, http.StatusInternalServerError, "token_generation_failed", "Failed to generate authentication tokens")
+		return
+	}
+
+	// Update Last Login
+	now := time.Now()
+	user.LastLogin = &now
+	if err = h.userRepo.Update(r.Context(), user); err != nil {
+		h.writeErrorResponse(w, http.StatusInternalServerError, "internal_error", "Failed to update user info")
 		return
 	}
 

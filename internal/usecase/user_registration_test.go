@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/matchtcg/backend/internal/domain"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -18,6 +19,11 @@ type MockUserRepository struct {
 }
 
 func (m *MockUserRepository) Create(ctx context.Context, user *domain.User) error {
+	args := m.Called(ctx, user)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) CreateTx(ctx context.Context, tx pgx.Tx, user *domain.User) error {
 	args := m.Called(ctx, user)
 	return args.Error(0)
 }
@@ -50,6 +56,11 @@ func (m *MockUserRepository) Delete(ctx context.Context, id uuid.UUID) error {
 
 func (m *MockUserRepository) CreateProfile(ctx context.Context, profile *domain.Profile) error {
 	args := m.Called(ctx, profile)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) CreateUserWithProfile(ctx context.Context, user *domain.User, profile *domain.Profile) error {
+	args := m.Called(ctx, user, profile)
 	return args.Error(0)
 }
 

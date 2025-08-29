@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -24,7 +25,7 @@ type UpdateProfileRequest struct {
 	DisplayName              *string                `json:"display_name,omitempty" validate:"omitempty,max=100"`
 	Locale                   *string                `json:"locale,omitempty" validate:"omitempty,locale"`
 	Timezone                 *string                `json:"timezone,omitempty" validate:"omitempty,timezone"`
-	Country                  *string                `json:"country,omitempty" validate:"omitempty,max=100"`
+	Country                  *string                `json:"country,omitempty" validate:"omitempty,country,max=12"`
 	City                     *string                `json:"city,omitempty" validate:"omitempty,max=100"`
 	PreferredGames           []string               `json:"preferred_games,omitempty"`
 	CommunicationPreferences map[string]interface{} `json:"communication_preferences,omitempty"`
@@ -155,7 +156,7 @@ func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
 		case usecase.ErrProfileNotFound:
 			h.writeErrorResponse(w, http.StatusNotFound, "profile_not_found", "Profile not found")
 		default:
-			h.writeErrorResponse(w, http.StatusInternalServerError, "profile_update_failed", "Failed to update profile")
+			h.writeErrorResponse(w, http.StatusInternalServerError, "profile_update_failed", fmt.Sprintf("Failed to update profile: %s", err))
 		}
 		return
 	}

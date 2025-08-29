@@ -39,10 +39,10 @@ type DatabaseConfig struct {
 
 // JWTConfig holds JWT-related configuration
 type JWTConfig struct {
-	Secret        string
-	RefreshSecret string
-	AccessTTL     time.Duration
-	RefreshTTL    time.Duration
+	PrivateKey string
+	PublicKey  string
+	AccessTTL  time.Duration
+	RefreshTTL time.Duration
 }
 
 // OAuthConfig holds OAuth provider configuration
@@ -100,10 +100,10 @@ func Load() (*Config, error) {
 			ConnMaxLifetime: getEnvAsDuration("DB_CONN_MAX_LIFETIME", 5*time.Minute),
 		},
 		JWT: JWTConfig{
-			Secret:        getEnv("JWT_SECRET", ""),
-			RefreshSecret: getEnv("JWT_REFRESH_SECRET", ""),
-			AccessTTL:     getEnvAsDuration("JWT_ACCESS_TTL", 15*time.Minute),
-			RefreshTTL:    getEnvAsDuration("JWT_REFRESH_TTL", 7*24*time.Hour),
+			PrivateKey: cleanPEMFromEnv(getEnv("JWT_PRIVATE_KEY", "")),
+			PublicKey:  cleanPEMFromEnv(getEnv("JWT_PUBLIC_KEY", "")),
+			AccessTTL:  getEnvAsDuration("JWT_ACCESS_TTL", 15*time.Minute),
+			RefreshTTL: getEnvAsDuration("JWT_REFRESH_TTL", 7*24*time.Hour),
 		},
 		OAuth: OAuthConfig{
 			Google: OAuthProvider{
@@ -145,13 +145,28 @@ func Load() (*Config, error) {
 	return cfg, nil
 }
 
+func cleanPEMFromEnv(raw string) string {
+	s := raw
+	// se veio com aspas literais, remove-as
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
+		s = s[1 : len(s)-1]
+	}
+	// converte \n -> quebra real
+	s = strings.ReplaceAll(s, `\n`, "\n")
+	// remove \r (caso alguém tenha \r\n no .env)
+	s = strings.ReplaceAll(s, `\r`, "")
+	// remove BOM e espaços
+	s = strings.TrimSpace(strings.TrimPrefix(s, "\uFEFF"))
+	return s
+}
+
 // validate checks that required configuration values are set
 func (c *Config) validate() error {
-	if c.JWT.Secret == "" {
-		return fmt.Errorf("JWT_SECRET is required")
+	if c.JWT.PrivateKey == "" {
+		return fmt.Errorf("JWT_PRIVATE_KEY is required")
 	}
-	if c.JWT.RefreshSecret == "" {
-		return fmt.Errorf("JWT_REFRESH_SECRET is required")
+	if c.JWT.PublicKey == "" {
+		return fmt.Errorf("JWT_PUBLIC_KEY is required")
 	}
 	if c.Database.URL == "" {
 		return fmt.Errorf("DATABASE_URL is required")

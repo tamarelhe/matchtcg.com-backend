@@ -41,6 +41,10 @@ func (m *MockUserRepository) GetByID(ctx context.Context, id uuid.UUID) (*domain
 	return args.Get(0).(*domain.User), args.Error(1)
 }
 
+func (m *MockUserRepository) Update(ctx context.Context, user *domain.User) error {
+	return nil
+}
+
 // MockPasswordService is a mock implementation of PasswordService
 type MockPasswordService struct {
 	mock.Mock
