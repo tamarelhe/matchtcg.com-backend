@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/matchtcg/backend/internal/constant"
 )
 
 // ValidationMiddleware provides request validation functionality
@@ -127,6 +128,23 @@ func registerCustomValidators(v *validator.Validate) {
 			}
 		}
 		return false
+	})
+
+	// Custom validator for country
+	v.RegisterValidation("country", func(fl validator.FieldLevel) bool {
+		country := fl.Field().String()
+		// Allow empty values (will be handled by omitempty tag)
+		if country == "" {
+			return true
+		}
+
+		// Validate country code
+		_, ok := constant.ISO3166Alpha2[country]
+		if !ok {
+			return false
+		}
+
+		return true
 	})
 
 	// Custom validator for timezone (basic validation)

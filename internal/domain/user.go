@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/matchtcg/backend/internal/constant"
 )
 
 // User represents a user in the system
@@ -47,6 +48,7 @@ var (
 	ErrInvalidDisplayName = errors.New("display name must be between 1 and 100 characters")
 	ErrInvalidLocale      = errors.New("locale must be 'en' or 'pt'")
 	ErrInvalidTimezone    = errors.New("timezone cannot be empty")
+	ErrInvalidCountry     = errors.New("invalid country")
 )
 
 var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
@@ -83,6 +85,12 @@ func (p *Profile) Validate() error {
 
 	if p.Timezone == "" {
 		return ErrInvalidTimezone
+	}
+
+	// Validate country code
+	_, ok := constant.ISO3166Alpha2[*p.Country]
+	if !ok {
+		return ErrInvalidCountry
 	}
 
 	return nil

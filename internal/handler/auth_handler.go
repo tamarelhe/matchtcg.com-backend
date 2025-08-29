@@ -43,12 +43,12 @@ type AuthHandler struct {
 
 // RegisterRequest represents the registration request payload
 type RegisterRequest struct {
-	Email       string `json:"email" validate:"required,email"`
-	Password    string `json:"password" validate:"required,min=8"`
+	Email       string `json:"email" validate:"required,email,max=255"`
+	Password    string `json:"password" validate:"required,min=8,max=20"`
 	DisplayName string `json:"display_name,omitempty" validate:"max=100"`
-	Locale      string `json:"locale,omitempty" validate:"locale"`
+	Locale      string `json:"locale,omitempty" validate:"locale,max=10"`
 	Timezone    string `json:"timezone" validate:"required,timezone"`
-	Country     string `json:"country,omitempty" validate:"max=100"`
+	Country     string `json:"country,omitempty" validate:"country,max=2"`
 	City        string `json:"city,omitempty" validate:"max=100"`
 }
 
