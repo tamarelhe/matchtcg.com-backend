@@ -22,7 +22,7 @@ type VenueHandler struct {
 // CreateVenueRequest represents the venue creation request payload
 type CreateVenueRequest struct {
 	Name     string                 `json:"name" validate:"required,min=1,max=200"`
-	Type     string                 `json:"type" validate:"required,oneof=store home other"`
+	Type     string                 `json:"type" validate:"required,venue_type"`
 	Address  string                 `json:"address" validate:"required,min=1,max=500"`
 	City     string                 `json:"city" validate:"required,min=1,max=100"`
 	Country  string                 `json:"country" validate:"required,min=1,max=100"`
@@ -32,7 +32,7 @@ type CreateVenueRequest struct {
 // UpdateVenueRequest represents the venue update request payload
 type UpdateVenueRequest struct {
 	Name     *string                `json:"name,omitempty" validate:"omitempty,min=1,max=200"`
-	Type     *string                `json:"type,omitempty" validate:"omitempty,oneof=store home other"`
+	Type     *string                `json:"type,omitempty" validate:"omitempty,venue_type"`
 	Address  *string                `json:"address,omitempty" validate:"omitempty,min=1,max=500"`
 	City     *string                `json:"city,omitempty" validate:"omitempty,min=1,max=100"`
 	Country  *string                `json:"country,omitempty" validate:"omitempty,min=1,max=100"`

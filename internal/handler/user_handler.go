@@ -22,10 +22,10 @@ type UserHandler struct {
 // UpdateProfileRequest represents the profile update request payload
 type UpdateProfileRequest struct {
 	DisplayName              *string                `json:"display_name,omitempty" validate:"omitempty,max=100"`
-	Locale                   *string                `json:"locale,omitempty" validate:"omitempty,oneof=en pt"`
-	Timezone                 *string                `json:"timezone,omitempty"`
-	Country                  *string                `json:"country,omitempty"`
-	City                     *string                `json:"city,omitempty"`
+	Locale                   *string                `json:"locale,omitempty" validate:"omitempty,locale"`
+	Timezone                 *string                `json:"timezone,omitempty" validate:"omitempty,timezone"`
+	Country                  *string                `json:"country,omitempty" validate:"omitempty,max=100"`
+	City                     *string                `json:"city,omitempty" validate:"omitempty,max=100"`
 	PreferredGames           []string               `json:"preferred_games,omitempty"`
 	CommunicationPreferences map[string]interface{} `json:"communication_preferences,omitempty"`
 	VisibilitySettings       map[string]interface{} `json:"visibility_settings,omitempty"`

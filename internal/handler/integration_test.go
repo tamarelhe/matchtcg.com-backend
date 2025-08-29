@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/matchtcg/backend/internal/domain"
+	"github.com/matchtcg/backend/internal/middleware"
 	"github.com/matchtcg/backend/internal/service"
 	"github.com/matchtcg/backend/internal/usecase"
 )
@@ -199,7 +200,7 @@ func TestAuthHandlerIntegration(t *testing.T) {
 		reqBody := RegisterRequest{
 			Email:    "test@example.com",
 			Password: "TestPass123!",
-			Timezone: "UTC",
+			Timezone: "Europe/Lisbon",
 		}
 		body, _ := json.Marshal(reqBody)
 
@@ -375,10 +376,10 @@ func TestErrorHandling(t *testing.T) {
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 
-		var response ErrorResponse
+		var response middleware.ValidationErrorResponse
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-		assert.Equal(t, "invalid_request", response.Error)
+		assert.Equal(t, "validation_error", response.Error)
 	})
 
 	t.Run("Missing Required Fields", func(t *testing.T) {
@@ -402,12 +403,12 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("Weak Password", func(t *testing.T) {
-		mockPasswordService.On("ValidatePasswordStrength", "weak").Return(assert.AnError)
+		mockPasswordService.On("ValidatePasswordStrength", "weakpassword").Return(assert.AnError)
 
 		reqBody := RegisterRequest{
 			Email:    "test@example.com",
-			Password: "weak",
-			Timezone: "UTC",
+			Password: "weakpassword", // 12 chars, passes length validation but should fail strength
+			Timezone: "Europe/Lisbon",
 		}
 		body, _ := json.Marshal(reqBody)
 

@@ -45,16 +45,16 @@ type RegisterRequest struct {
 	Email       string `json:"email" validate:"required,email"`
 	Password    string `json:"password" validate:"required,min=8"`
 	DisplayName string `json:"display_name,omitempty" validate:"max=100"`
-	Locale      string `json:"locale,omitempty" validate:"oneof=en pt"`
-	Timezone    string `json:"timezone" validate:"required"`
-	Country     string `json:"country,omitempty"`
-	City        string `json:"city,omitempty"`
+	Locale      string `json:"locale,omitempty" validate:"locale"`
+	Timezone    string `json:"timezone" validate:"required,timezone"`
+	Country     string `json:"country,omitempty" validate:"max=100"`
+	City        string `json:"city,omitempty" validate:"max=100"`
 }
 
 // LoginRequest represents the login request payload
 type LoginRequest struct {
 	Email    string `json:"email" validate:"required,email"`
-	Password string `json:"password" validate:"required"`
+	Password string `json:"password" validate:"required,min=1"`
 }
 
 // RefreshRequest represents the token refresh request payload
@@ -106,27 +106,14 @@ func NewAuthHandler(
 
 // Register handles POST /auth/register
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
+	validator := NewValidationHelper()
+
 	var req RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.writeErrorResponse(w, http.StatusBadRequest, "invalid_request", "Invalid request body")
+	if !validator.ValidateAndDecodeJSON(w, r, &req) {
 		return
 	}
 
-	// Validate required fields
-	if req.Email == "" {
-		h.writeErrorResponse(w, http.StatusBadRequest, "validation_error", "Email is required")
-		return
-	}
-	if req.Password == "" {
-		h.writeErrorResponse(w, http.StatusBadRequest, "validation_error", "Password is required")
-		return
-	}
-	if req.Timezone == "" {
-		h.writeErrorResponse(w, http.StatusBadRequest, "validation_error", "Timezone is required")
-		return
-	}
-
-	// Validate password strength
+	// Validate password strength (additional business logic validation)
 	if err := h.passwordService.ValidatePasswordStrength(req.Password); err != nil {
 		h.writeErrorResponse(w, http.StatusBadRequest, "weak_password", err.Error())
 		return
@@ -184,15 +171,10 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 // Login handles POST /auth/login
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
-	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.writeErrorResponse(w, http.StatusBadRequest, "invalid_request", "Invalid request body")
-		return
-	}
+	validator := NewValidationHelper()
 
-	// Validate required fields
-	if req.Email == "" || req.Password == "" {
-		h.writeErrorResponse(w, http.StatusBadRequest, "validation_error", "Email and password are required")
+	var req LoginRequest
+	if !validator.ValidateAndDecodeJSON(w, r, &req) {
 		return
 	}
 
@@ -244,14 +226,10 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 // Refresh handles POST /auth/refresh
 func (h *AuthHandler) Refresh(w http.ResponseWriter, r *http.Request) {
-	var req RefreshRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		h.writeErrorResponse(w, http.StatusBadRequest, "invalid_request", "Invalid request body")
-		return
-	}
+	validator := NewValidationHelper()
 
-	if req.RefreshToken == "" {
-		h.writeErrorResponse(w, http.StatusBadRequest, "validation_error", "Refresh token is required")
+	var req RefreshRequest
+	if !validator.ValidateAndDecodeJSON(w, r, &req) {
 		return
 	}
 

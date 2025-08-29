@@ -31,13 +31,13 @@ type UpdateGroupRequest struct {
 
 // AddMemberRequest represents the add member request payload
 type AddMemberRequest struct {
-	UserID string `json:"user_id" validate:"required"`
-	Role   string `json:"role" validate:"required,oneof=member admin"`
+	UserID string `json:"user_id" validate:"required,uuid"`
+	Role   string `json:"role" validate:"required,group_role"`
 }
 
 // UpdateMemberRoleRequest represents the update member role request payload
 type UpdateMemberRoleRequest struct {
-	Role string `json:"role" validate:"required,oneof=member admin owner"`
+	Role string `json:"role" validate:"required,group_role"`
 }
 
 // GroupResponse represents the group response

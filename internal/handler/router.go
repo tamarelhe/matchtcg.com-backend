@@ -34,11 +34,12 @@ type RouterConfig struct {
 	EventRepository repository.EventRepository
 
 	// Middleware
-	AuthMiddleware      *middleware.AuthMiddleware
-	RateLimitMiddleware *middleware.RateLimitMiddleware
-	CORSMiddleware      *middleware.CORSMiddleware
-	LoggingMiddleware   *middleware.LoggingMiddleware
-	SecurityMiddleware  *middleware.SecurityMiddleware
+	AuthMiddleware       *middleware.AuthMiddleware
+	RateLimitMiddleware  *middleware.RateLimitMiddleware
+	CORSMiddleware       *middleware.CORSMiddleware
+	LoggingMiddleware    *middleware.LoggingMiddleware
+	SecurityMiddleware   *middleware.SecurityMiddleware
+	ValidationMiddleware *middleware.ValidationMiddleware
 }
 
 // NewRouter creates and configures the main application router
@@ -98,8 +99,14 @@ func NewRouter(config RouterConfig) *mux.Router {
 	// Health check endpoint
 	router.HandleFunc("/health", healthCheckHandler).Methods("GET")
 
-	// API documentation endpoint
+	// API documentation endpoints
 	router.HandleFunc("/api/docs", apiDocsHandler).Methods("GET")
+	router.PathPrefix("/docs/").Handler(http.StripPrefix("/docs/", http.FileServer(http.Dir("./docs/"))))
+
+	// Redirect /docs to swagger UI
+	router.HandleFunc("/docs", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/docs/swagger-ui.html", http.StatusMovedPermanently)
+	}).Methods("GET")
 
 	return router
 }

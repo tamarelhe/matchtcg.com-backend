@@ -24,20 +24,20 @@ type EventHandler struct {
 type CreateEventRequest struct {
 	Title       string    `json:"title" validate:"required,min=1,max=200"`
 	Description string    `json:"description,omitempty" validate:"max=2000"`
-	Game        string    `json:"game" validate:"required,oneof=mtg lorcana pokemon"`
+	Game        string    `json:"game" validate:"required,game_type"`
 	Format      string    `json:"format,omitempty" validate:"max=100"`
 	Rules       string    `json:"rules,omitempty" validate:"max=1000"`
-	Visibility  string    `json:"visibility" validate:"required,oneof=public private group"`
+	Visibility  string    `json:"visibility" validate:"required,event_visibility"`
 	Capacity    *int      `json:"capacity,omitempty" validate:"omitempty,min=2,max=1000"`
 	StartAt     time.Time `json:"start_at" validate:"required"`
 	EndAt       time.Time `json:"end_at" validate:"required"`
-	Timezone    string    `json:"timezone" validate:"required"`
+	Timezone    string    `json:"timezone" validate:"required,timezone"`
 	Tags        []string  `json:"tags,omitempty"`
 	EntryFee    *float64  `json:"entry_fee,omitempty" validate:"omitempty,min=0"`
-	Language    string    `json:"language,omitempty" validate:"omitempty,oneof=en pt"`
-	GroupID     *string   `json:"group_id,omitempty"`
-	VenueID     *string   `json:"venue_id,omitempty"`
-	Address     string    `json:"address,omitempty"`
+	Language    string    `json:"language,omitempty" validate:"locale"`
+	GroupID     *string   `json:"group_id,omitempty" validate:"omitempty,uuid"`
+	VenueID     *string   `json:"venue_id,omitempty" validate:"omitempty,uuid"`
+	Address     string    `json:"address,omitempty" validate:"max=500"`
 }
 
 // UpdateEventRequest represents the event update request payload
@@ -46,7 +46,7 @@ type UpdateEventRequest struct {
 	Description *string    `json:"description,omitempty" validate:"omitempty,max=2000"`
 	Format      *string    `json:"format,omitempty" validate:"omitempty,max=100"`
 	Rules       *string    `json:"rules,omitempty" validate:"omitempty,max=1000"`
-	Visibility  *string    `json:"visibility,omitempty" validate:"omitempty,oneof=public private group"`
+	Visibility  *string    `json:"visibility,omitempty" validate:"omitempty,event_visibility"`
 	Capacity    *int       `json:"capacity,omitempty" validate:"omitempty,min=2,max=1000"`
 	StartAt     *time.Time `json:"start_at,omitempty"`
 	EndAt       *time.Time `json:"end_at,omitempty"`
@@ -72,7 +72,7 @@ type EventSearchRequest struct {
 
 // RSVPRequest represents the RSVP request payload
 type RSVPRequest struct {
-	Status string `json:"status" validate:"required,oneof=going interested declined"`
+	Status string `json:"status" validate:"required,rsvp_status"`
 }
 
 // EventResponse represents the event response
